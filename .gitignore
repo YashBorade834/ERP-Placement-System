@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Env files
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
+build/
+
+# VS Code
+.vscode/
+
+test_datasetup.sql
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

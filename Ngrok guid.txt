@@ -1,0 +1,16 @@
+Ngrok guid 
+1) Start both frontend and backend
+2)using ngrok exe fie
+	first start backend:
+		ngrok config add-authtoken 3D4R3XhOwOEupRy0RqLGi3qsdmi_2UGAAvNSdACPvhFwkMq9t
+		ngrok http 8000
+	start frontend
+		ngrok config add-authtoken 3D4KI8fPTKWCE0Oar4OtxfwCbsP_537zanZLv6xUtBkHhwsQX
+		ngrok http 5173
+
+http://127.0.0.1:8000/admin/company/
+https://dollop-trailing-delusion.ngrok-free.dev/admin/company/
+
+link:
+        Frontend = https://chivalry-carpentry-dreamless.ngrok-free.dev
+        backend = https://dollop-trailing-delusion.ngrok-free.dev
