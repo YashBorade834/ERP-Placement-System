@@ -11,3 +11,4 @@ from app.models.application_status import ApplicationStatus
 from app.models.activity_log import ActivityLog
 from app.models.mou import MOU
 from app.models.offer import Offer
+from app.models.student_resume import StudentResume

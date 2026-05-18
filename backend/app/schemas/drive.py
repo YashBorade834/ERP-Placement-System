@@ -9,6 +9,7 @@ class DriveCreate(BaseModel):
     description: Optional[str] = None
     drive_date: Optional[date] = None
     venue: Optional[str] = None
+    package: Optional[str] = None
     is_published: bool = False
     is_active: bool = True
     registration_open: bool = True
@@ -19,6 +20,7 @@ class DriveUpdate(BaseModel):
     description: Optional[str] = None
     drive_date: Optional[date] = None
     venue: Optional[str] = None
+    package: Optional[str] = None
     is_published: Optional[bool] = None
     is_active: Optional[bool] = None
     registration_open: Optional[bool] = None
@@ -31,6 +33,7 @@ class DriveResponse(BaseModel):
     description: Optional[str]
     drive_date: Optional[date]
     venue: Optional[str]
+    package: Optional[str]
     is_published: bool
     is_active: bool
     registration_open: bool
@@ -77,6 +80,7 @@ class DriveCreateComplete(BaseModel):
     description: Optional[str] = None
     drive_date: Optional[date] = None
     venue: Optional[str] = None
+    package: Optional[str] = None
     is_published: bool = False
     is_active: bool = True
     registration_open: bool = True

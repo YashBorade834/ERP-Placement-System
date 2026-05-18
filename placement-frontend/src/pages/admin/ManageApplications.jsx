@@ -113,74 +113,86 @@ export default function ManageApplications() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white p-6">
-        <h1 className="text-3xl font-bold">📊 Manage Applications</h1>
-        <p className="text-purple-100 mt-1">Drive ID: {driveId} | Set application statuses</p>
+      <div className="erp-page-title">
+        <h1>📊 Manage Applications</h1>
+        <p>Drive ID: {driveId} | Set application statuses</p>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* MESSAGES */}
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded mb-4 flex justify-between items-center">
-            <span>{error}</span>
-            <button onClick={() => setError("")} className="font-bold">✕</button>
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-100 text-green-700 p-4 rounded mb-4 flex justify-between items-center">
-            <span>{success}</span>
-            <button onClick={() => setSuccess("")} className="font-bold">✕</button>
-          </div>
-        )}
+      {/* MESSAGES */}
+      {error && (
+        <div className="erp-alert erp-alert--danger erp-mb-4 flex justify-between items-center">
+          <div><i className="fa-solid fa-circle-xmark"></i><span>{error}</span></div>
+          <button onClick={() => setError("")} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit' }}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="erp-alert erp-alert--success erp-mb-4 flex justify-between items-center">
+          <div><i className="fa-solid fa-circle-check"></i><span>{success}</span></div>
+          <button onClick={() => setSuccess("")} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit' }}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      )}
 
-        {/* APPLICATIONS TABLE */}
-        <div className="bg-white rounded shadow-md overflow-hidden">
-          <div className="bg-purple-50 p-4 border-b border-purple-200">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Applications ({applications.length})
-            </h2>
+      {/* APPLICATIONS TABLE */}
+      <div className="erp-card">
+        <div className="erp-card__header">
+          <div>
+            <div className="erp-card__title">Applications ({applications.length})</div>
           </div>
+        </div>
 
+        <div style={{ padding: '0 20px 20px' }}>
           {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading applications...</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>Loading applications...</div>
           ) : applications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No applications found</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>No applications found</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b border-gray-300">
+              <table className="erp-table" data-erp-sortable="true">
+                <thead>
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Student ID</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Company</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Applied Date</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Current Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Remarks</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Action</th>
+                    <th>Student</th>
+                    <th>Company</th>
+                    <th>Applied Date</th>
+                    <th>Current Status</th>
+                    <th>Remarks</th>
+                    <th style={{ textAlign: 'center' }}>Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-sm text-gray-800 font-semibold">#{app.student_id}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        <div className="font-semibold">{app.drive_title}</div>
-                        <div className="text-xs text-gray-500">{app.company_name}</div>
+                    <tr key={app.id}>
+                       <td>
+                        <div style={{ fontWeight: 600 }}>{app.student_name || `Student #${app.student_id}`}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--erp-text-muted)' }}>ID: {app.student_id}</div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{app.drive_title}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--erp-text-muted)' }}>{app.company_name}</div>
+                      </td>
+                      <td>
                         {new Date(app.applied_at).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-3 py-1 rounded text-sm font-semibold ${getStatusBadgeColor(app.application_status)}`}>
+                      <td>
+                        <span className={`erp-pill ${
+                          app.application_status === 'APPLIED' ? 'erp-pill--primary' :
+                          app.application_status === 'SHORTLISTED' ? 'erp-pill--warning' :
+                          app.application_status === 'SELECTED' ? 'erp-pill--success' :
+                          app.application_status === 'REJECTED' ? 'erp-pill--danger' :
+                          app.application_status === 'WITHDRAWN' ? 'erp-pill--ghost' : ''
+                        }`}>
                           {getStatusEmoji(app.application_status)} {app.application_status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
+                      <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {app.remarks || "-"}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td style={{ textAlign: 'center' }}>
                         <button
                           onClick={() => {
                             setSelectedApp(app);
@@ -188,7 +200,7 @@ export default function ManageApplications() {
                             setRemarks(app.remarks || "");
                             setShowStatusModal(true);
                           }}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold transition"
+                          className="erp-btn erp-btn--primary erp-btn--sm"
                         >
                           Set Status
                         </button>
@@ -204,102 +216,106 @@ export default function ManageApplications() {
 
       {/* STATUS MODAL */}
       {showStatusModal && selectedApp && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Set Application Status
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Student ID: <span className="font-semibold">#{selectedApp.student_id}</span>
-            </p>
+        <div className="erp-modal-backdrop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="erp-modal" style={{ display: 'block', position: 'relative', width: '100%', maxWidth: '500px', margin: '0 20px' }}>
+            <div className="erp-modal__header">
+              <h3 className="erp-modal__title">Set Application Status</h3>
+              <button className="erp-modal__close" onClick={() => setShowStatusModal(false)}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="erp-modal__body">
+              <p style={{ marginBottom: '16px' }}>
+                Student: <strong>{selectedApp.student_name || `#${selectedApp.student_id}`}</strong>
+                {selectedApp.student_name && <span style={{ fontSize: '12px', color: 'var(--erp-text-muted)', marginLeft: '8px' }}>(ID: {selectedApp.student_id})</span>}
+              </p>
 
-            <form onSubmit={handleSetStatus} className="space-y-4">
-              {/* STATUS SELECTOR */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="APPLIED">📝 APPLIED</option>
-                  <option value="PENDING">⏳ PENDING</option>
-                  <option value="SHORTLISTED">✅ SHORTLISTED</option>
-                  <option value="SELECTED">🎉 SELECTED</option>
-                  <option value="REJECTED">❌ REJECTED</option>
-                  <option value="WITHDRAWN">🗑️ WITHDRAWN</option>
-                </select>
-              </div>
+              <form onSubmit={handleSetStatus}>
+                {/* STATUS SELECTOR */}
+                <div className="erp-form-group">
+                  <label>Status</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="erp-form-control"
+                  >
+                    <option value="APPLIED">📝 APPLIED</option>
+                    <option value="PENDING">⏳ PENDING</option>
+                    <option value="SHORTLISTED">✅ SHORTLISTED</option>
+                    <option value="SELECTED">🎉 SELECTED</option>
+                    <option value="REJECTED">❌ REJECTED</option>
+                    <option value="WITHDRAWN">🗑️ WITHDRAWN</option>
+                  </select>
+                </div>
 
-              {/* REMARKS */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Remarks (Optional)
-                </label>
-                <textarea
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Add remarks about the decision..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  rows="3"
-                />
-              </div>
+                {/* REMARKS */}
+                <div className="erp-form-group">
+                  <label>Remarks (Optional)</label>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Add remarks about the decision..."
+                    className="erp-form-control"
+                    rows="3"
+                  />
+                </div>
 
-              {/* BUTTONS */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowStatusModal(false)}
-                  disabled={statusLoading}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded font-semibold hover:bg-gray-50 transition disabled:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={statusLoading}
-                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded font-semibold hover:bg-blue-600 transition disabled:bg-gray-400"
-                >
-                  {statusLoading ? "Updating..." : "Update Status"}
-                </button>
-              </div>
-
-              {/* QUICK ACTIONS */}
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-600 font-semibold mb-3">Quick Actions:</p>
-                <div className="grid grid-cols-3 gap-2">
+                {/* BUTTONS */}
+                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                   <button
                     type="button"
-                    onClick={() => handleQuickStatus("SHORTLISTED", "Shortlisted for next round")}
+                    onClick={() => setShowStatusModal(false)}
                     disabled={statusLoading}
-                    className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold hover:bg-yellow-200 transition disabled:bg-gray-100"
+                    className="erp-btn erp-btn--outline"
+                    style={{ flex: 1 }}
                   >
-                    ✅ Shortlist
+                    Cancel
                   </button>
                   <button
-                    type="button"
-                    onClick={() => handleQuickStatus("SELECTED", "Job offer extended")}
+                    type="submit"
                     disabled={statusLoading}
-                    className="px-3 py-2 bg-green-100 text-green-700 rounded text-xs font-semibold hover:bg-green-200 transition disabled:bg-gray-100"
+                    className="erp-btn erp-btn--primary"
+                    style={{ flex: 1 }}
                   >
-                    🎉 Select
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickStatus("REJECTED", "Not selected")}
-                    disabled={statusLoading}
-                    className="px-3 py-2 bg-red-100 text-red-700 rounded text-xs font-semibold hover:bg-red-200 transition disabled:bg-gray-100"
-                  >
-                    ❌ Reject
+                    {statusLoading ? "Updating..." : "Update Status"}
                   </button>
                 </div>
-              </div>
-            </form>
+
+                {/* QUICK ACTIONS */}
+                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--erp-border)' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--erp-text-muted)', marginBottom: '12px' }}>Quick Actions:</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickStatus("SHORTLISTED", "Shortlisted for next round")}
+                      disabled={statusLoading}
+                      className="erp-btn erp-btn--warning erp-btn--sm"
+                    >
+                      ✅ Shortlist
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickStatus("SELECTED", "Job offer extended")}
+                      disabled={statusLoading}
+                      className="erp-btn erp-btn--success erp-btn--sm"
+                    >
+                      🎉 Select
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickStatus("REJECTED", "Not selected")}
+                      disabled={statusLoading}
+                      className="erp-btn erp-btn--danger erp-btn--sm"
+                    >
+                      ❌ Reject
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getCompanies } from "../../api/companyApi";
 import { getDrives } from "../../api/driveApi";
 import { getApplicationsCount } from "../../api/applicationStatusApi";
+import PlacementAnalytics from "../../components/PlacementAnalytics";
 
 
 
@@ -117,7 +118,7 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div style={{ padding: '24px' }}>
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <p className="mt-4 text-gray-500">Loading dashboard...</p>
       </div>
@@ -125,75 +126,112 @@ useEffect(() => {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-
-      {error && <div className="bg-red-100 text-red-700 p-4 rounded mb-4">{error}</div>}
-
-      {/* STATS CARDS */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded shadow">
-          <h3 className="text-gray-500 text-sm font-semibold">Total Companies</h3>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{stats.companies}</p>
-        </div>
-
-        <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded shadow">
-          <h3 className="text-gray-500 text-sm font-semibold">Active Drives</h3>
-          <p className="text-3xl font-bold text-green-600 mt-2">{stats.drives}</p>
-        </div>
-
-        <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded shadow">
-          <h3 className="text-gray-500 text-sm font-semibold">Applications</h3>
-          <p className="text-3xl font-bold text-purple-600 mt-2">{stats.applications}</p>
-        </div>
+    <>
+      <div className="erp-page-title">
+        <h1>Dashboard Overview</h1>
+        <p>Placement Statistics</p>
       </div>
 
-      {/* COMPANIES TABLE */}
-      <div className="bg-white p-6 rounded shadow mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Companies</h2>
-          <input
-            type="text"
-            placeholder="🔍 Search companies..."
-            value={searchCompany}
-            onChange={e => setSearchCompany(e.target.value)}
-            className="border p-2 rounded w-80"
-          />
+      {error && <div className="erp-alert erp-alert--danger erp-mb-6"><i className="fa-solid fa-circle-xmark"></i><span>{error}</span></div>}
+
+      {/* STATS CARDS */}
+      <div className="erp-stats-grid erp-mb-6">
+        <div className="erp-stat-card erp-stat-card--primary">
+          <div className="erp-stat-card__header">
+            <div className="erp-stat-card__icon"><i className="fa-solid fa-building"></i></div>
+          </div>
+          <div className="erp-stat-card__value">{stats.companies}</div>
+          <div className="erp-stat-card__label">Total Companies</div>
         </div>
-        {companies.length === 0 ? (
-          <p className="text-gray-500">No companies yet</p>
-        ) : filteredCompanies.length === 0 ? (
-          <p className="text-gray-500">No companies match your search</p>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100">
+
+        <div className="erp-stat-card erp-stat-card--success">
+          <div className="erp-stat-card__header">
+            <div className="erp-stat-card__icon"><i className="fa-solid fa-briefcase"></i></div>
+          </div>
+          <div className="erp-stat-card__value">{stats.drives}</div>
+          <div className="erp-stat-card__label">Active Drives</div>
+        </div>
+
+        <div className="erp-stat-card erp-stat-card--warning">
+          <div className="erp-stat-card__header">
+            <div className="erp-stat-card__icon"><i className="fa-solid fa-file-lines"></i></div>
+          </div>
+          <div className="erp-stat-card__value">{stats.applications}</div>
+          <div className="erp-stat-card__label">Total Applications</div>
+        </div>
+
+        <div className="erp-stat-card erp-stat-card--danger">
+          <div className="erp-stat-card__header">
+            <div className="erp-stat-card__icon"><i className="fa-solid fa-user-graduate"></i></div>
+          </div>
+          <div className="erp-stat-card__value">Live</div>
+          <div className="erp-stat-card__label">System Status</div>
+        </div>
+      </div>
+      
+      {/* ANALYTICS CHARTS */}
+      <div className="erp-mb-6">
+        <PlacementAnalytics />
+      </div>
+
+      <div className="erp-mb-6">
+        {/* COMPANIES TABLE */}
+        <div className="erp-card erp-mb-6">
+          <div className="erp-card__header">
+            <div>
+              <div className="erp-card__title">Companies</div>
+              <div className="erp-card__subtitle">Registered Companies</div>
+            </div>
+            <input
+              type="text"
+              placeholder="🔍 Search..."
+              value={searchCompany}
+              onChange={e => setSearchCompany(e.target.value)}
+              className="erp-form-control"
+              style={{ width: '200px' }}
+            />
+          </div>
+          {companies.length === 0 ? (
+            <p style={{ padding: '20px', color: '#666' }}>No companies yet</p>
+          ) : filteredCompanies.length === 0 ? (
+            <p style={{ padding: '20px', color: '#666' }}>No companies match your search</p>
+          ) : (
+            <>
+              <table className="erp-table" data-erp-sortable="true">
+                <thead>
                   <tr>
-                    <th className="p-2 text-left">ID</th>
-                    <th className="p-2 text-left">Name</th>
-                    <th className="p-2 text-left">Industry</th>
-                    <th className="p-2 text-left">Website</th>
-                    <th className="p-2 text-left">Location</th>
-                    <th className="p-2 text-left">HR Contact</th>
-                    <th className="p-2 text-left">Status</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Industry</th>
+                    <th>Location</th>
+                    <th>Website</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {displayedCompanies.map(c => (
-                    <tr key={c.id} className="border-t hover:bg-gray-50">
-                      <td className="p-2">{c.id}</td>
-                      <td className="p-2 font-medium">{c.name}</td>
-                      <td className="p-2">{c.industry}</td>
-                      <td className="p-2">
-                        <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                          Visit
-                        </a>
+                    <tr key={c.id}>
+                      <td>{c.id}</td>
+                      <td><strong>{c.name}</strong></td>
+                      <td>{c.industry}</td>
+                      <td>{c.address || "—"}</td>
+                      <td>
+                        {c.website ? (
+                          <a
+                            href={c.website.startsWith('http') ? c.website : `https://${c.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'var(--erp-primary)', fontWeight: 600, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '10px' }}></i>
+                            {c.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                          </a>
+                        ) : (
+                          <span style={{ color: 'var(--erp-text-muted)' }}>—</span>
+                        )}
                       </td>
-                      <td className="p-2">{c.address || "-"}</td>
-                      <td className="p-2">{c.hr_contact_name || "-"}</td>
-                      <td className="p-2">
-                        <span className={`px-2 py-1 rounded text-xs ${c.is_approved ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                      <td>
+                        <span className={`erp-pill ${c.is_approved ? "erp-pill--success" : "erp-pill--warning"}`}>
                           {c.is_approved ? "Approved" : "Pending"}
                         </span>
                       </td>
@@ -201,78 +239,68 @@ useEffect(() => {
                   ))}
                 </tbody>
               </table>
-            </div>
-            
-            {filteredCompanies.length > 5 && !showAllCompanies && !searchCompany && (
-              <button
-                onClick={() => setShowAllCompanies(true)}
-                className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded cursor-pointer"
-              >
-                📋 View All Companies ({filteredCompanies.length})
-              </button>
-            )}
-            
-            {showAllCompanies && !searchCompany && (
-              <button
-                onClick={() => setShowAllCompanies(false)}
-                className="mt-4 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded cursor-pointer"
-              >
-                ↑ Show Less
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* DRIVES TABLE */}
-      <div className="bg-white p-6 rounded shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Placement Drives</h2>
-          <input
-            type="text"
-            placeholder="🔍 Search drives..."
-            value={searchDrive}
-            onChange={e => setSearchDrive(e.target.value)}
-            className="border p-2 rounded w-80"
-          />
+              
+              {filteredCompanies.length > 5 && !showAllCompanies && !searchCompany && (
+                <div style={{ padding: '16px' }}>
+                  <button onClick={() => setShowAllCompanies(true)} className="erp-btn erp-btn--outline">
+                    View All Companies ({filteredCompanies.length})
+                  </button>
+                </div>
+              )}
+              
+              {showAllCompanies && !searchCompany && (
+                <div style={{ padding: '16px' }}>
+                  <button onClick={() => setShowAllCompanies(false)} className="erp-btn erp-btn--ghost">
+                    ↑ Show Less
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
-        {drives.length === 0 ? (
-          <p className="text-gray-500">No drives yet</p>
-        ) : filteredDrives.length === 0 ? (
-          <p className="text-gray-500">No drives match your search</p>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100">
+
+        {/* DRIVES TABLE */}
+        <div className="erp-card">
+          <div className="erp-card__header">
+            <div>
+              <div className="erp-card__title">Placement Drives</div>
+              <div className="erp-card__subtitle">Active and past drives</div>
+            </div>
+            <input
+              type="text"
+              placeholder="🔍 Search..."
+              value={searchDrive}
+              onChange={e => setSearchDrive(e.target.value)}
+              className="erp-form-control"
+              style={{ width: '200px' }}
+            />
+          </div>
+          {drives.length === 0 ? (
+            <p style={{ padding: '20px', color: '#666' }}>No drives yet</p>
+          ) : filteredDrives.length === 0 ? (
+            <p style={{ padding: '20px', color: '#666' }}>No drives match your search</p>
+          ) : (
+            <>
+              <table className="erp-table" data-erp-sortable="true">
+                <thead>
                   <tr>
-                    <th className="p-2 text-left">ID</th>
-                    <th className="p-2 text-left">Role Title</th>
-                    <th className="p-2 text-left">Company</th>
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">Venue</th>
-                    <th className="p-2 text-left">Published</th>
-                    <th className="p-2 text-left">Active</th>
+                    <th>Role Title</th>
+                    <th>Company</th>
+                    <th>Date</th>
+                    <th>Active</th>
                   </tr>
                 </thead>
                 <tbody>
                   {displayedDrives.map(d => {
                     const company = companies.find(c => c.id === d.company_id);
                     return (
-                      <tr key={d.id} className="border-t hover:bg-gray-50">
-                        <td className="p-2">{d.id}</td>
-                        <td className="p-2 font-medium">{d.title}</td>
-                        <td className="p-2">{company?.name || "Unknown"}</td>
-                        <td className="p-2">{d.drive_date || "-"}</td>
-                        <td className="p-2">{d.venue || "-"}</td>
-                        <td className="p-2">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${d.is_published ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}>
-                            {d.is_published ? "✓ Yes" : "✗ No"}
-                          </span>
-                        </td>
-                        <td className="p-2">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${d.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                            {d.is_active ? "✓ Active" : "✗ Inactive"}
+                      <tr key={d.id}>
+                        <td><strong>{d.title}</strong></td>
+                        <td>{company?.name || "Unknown"}</td>
+                        <td>{d.drive_date || "-"}</td>
+                        <td>
+                          <span className={`erp-pill ${d.is_active ? "erp-pill--success" : "erp-pill--danger"}`}>
+                            {d.is_active ? "Active" : "Inactive"}
                           </span>
                         </td>
                       </tr>
@@ -280,28 +308,26 @@ useEffect(() => {
                   })}
                 </tbody>
               </table>
-            </div>
-            
-            {filteredDrives.length > 5 && !showAllDrives && !searchDrive && (
-              <button
-                onClick={() => setShowAllDrives(true)}
-                className="mt-4 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded cursor-pointer"
-              >
-                📋 View All Drives ({filteredDrives.length})
-              </button>
-            )}
-            
-            {showAllDrives && !searchDrive && (
-              <button
-                onClick={() => setShowAllDrives(false)}
-                className="mt-4 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded cursor-pointer"
-              >
-                ↑ Show Less
-              </button>
-            )}
-          </>
-        )}
+              
+              {filteredDrives.length > 5 && !showAllDrives && !searchDrive && (
+                <div style={{ padding: '16px' }}>
+                  <button onClick={() => setShowAllDrives(true)} className="erp-btn erp-btn--outline">
+                    View All Drives ({filteredDrives.length})
+                  </button>
+                </div>
+              )}
+              
+              {showAllDrives && !searchDrive && (
+                <div style={{ padding: '16px' }}>
+                  <button onClick={() => setShowAllDrives(false)} className="erp-btn erp-btn--ghost">
+                    ↑ Show Less
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

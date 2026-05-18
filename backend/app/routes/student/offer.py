@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.offer import Offer
 from app.models.application_status import ApplicationStatus
-from app.schemas.offer import OfferCreate, OfferUpdate, OfferResponse
+from app.schemas.offer import OfferCreate, OfferUpdate, OfferResponse, RejectOfferRequest
 
 # router = APIRouter(prefix="/offers", tags=["Offers"])
 router = APIRouter(tags=["Offers"])
@@ -48,6 +48,20 @@ def create_offer(data: OfferCreate, db: Session = Depends(get_db)):
 def get_all_offers(db: Session = Depends(get_db)):
     return db.query(Offer).all()
 
+# GET BY STUDENT
+@router.get("/student/{student_id}", response_model=list[OfferResponse])
+def get_my_offers(student_id: int, db: Session = Depends(get_db)):
+    """Get all offers for a specific student"""
+    from app.models.student_application import StudentApplication
+    
+    offers = db.query(Offer).join(
+        StudentApplication, Offer.application_id == StudentApplication.id
+    ).filter(
+        StudentApplication.student_id == student_id
+    ).all()
+    
+    return offers
+
 
 # GET BY ID
 @router.get("/{id}", response_model=OfferResponse)
@@ -86,13 +100,14 @@ def accept_offer(id: int, db: Session = Depends(get_db)):
 
 # ❌ REJECT OFFER
 @router.put("/{id}/reject")
-def reject_offer(id: int, db: Session = Depends(get_db)):
+def reject_offer(id: int, data: RejectOfferRequest, db: Session = Depends(get_db)):
     offer = db.query(Offer).filter(Offer.id == id).first()
 
     if not offer:
         raise HTTPException(404, "Offer not found")
 
     offer.status = "Rejected"
+    offer.reason = data.reason
     db.commit()
 
     return {"message": "Offer rejected"}

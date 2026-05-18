@@ -25,3 +25,18 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Databases
+*.db
+*.sqlite3
+
+# Local Uploads & Temp Files
+backend/uploads/
+backend/scratch/
+backend/temp.py
+temp_theme/
+PVGERP-theme-main (1)/
+*temp*
+*old*
+placement-frontend/diff_utf8.txt
+placement-frontend/temp_diff.txt

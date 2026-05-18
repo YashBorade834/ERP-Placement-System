@@ -113,147 +113,193 @@ export default function Companies() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Companies</h1>
+    <>
+      <div className="erp-page-title">
+        <h1>Companies</h1>
+        <p>Manage registered companies</p>
+      </div>
 
-      {error && <div className="bg-red-100 text-red-700 p-4 rounded mb-4">{error}</div>}
-      {success && <div className="bg-green-100 text-green-700 p-4 rounded mb-4">{success}</div>}
+      {error && <div className="erp-alert erp-alert--danger erp-mb-4"><i className="fa-solid fa-circle-xmark"></i><span>{error}</span></div>}
+      {success && <div className="erp-alert erp-alert--success erp-mb-4"><i className="fa-solid fa-circle-check"></i><span>{success}</span></div>}
 
       {/* FORM */}
-      <div className="bg-white p-6 rounded shadow mb-6">
-        <h2 className="text-lg font-semibold mb-4">Add New Company</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <input
-            placeholder="Company Name *"
-            value={form.name}
-            onChange={e => setForm({...form, name: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="Industry *"
-            value={form.industry}
-            onChange={e => setForm({...form, industry: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="Website *"
-            value={form.website}
-            onChange={e => setForm({...form, website: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="Address *"
-            value={form.address}
-            onChange={e => setForm({...form, address: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="HR Contact Name"
-            value={form.hr_contact_name}
-            onChange={e => setForm({...form, hr_contact_name: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="HR Contact Email"
-            value={form.hr_contact_email}
-            onChange={e => setForm({...form, hr_contact_email: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="HR Contact Phone"
-            value={form.hr_contact_phone}
-            onChange={e => setForm({...form, hr_contact_phone: e.target.value})}
-            className="border p-2 rounded"
-          />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.is_approved}
-              onChange={e => setForm({...form, is_approved: e.target.checked})}
-              className="w-4 h-4"
-            />
-            Approved
-          </label>
+      <div className="erp-card erp-mb-6">
+        <div className="erp-card__header">
+          <div>
+            <div className="erp-card__title">Add New Company</div>
+            <div className="erp-card__subtitle">Register a new recruitment partner</div>
+          </div>
         </div>
+        
+        <div className="erp-card__body">
+          <div className="erp-form-grid-3 erp-mb-6">
+            <div className="erp-form-group">
+              <label>Company Name *</label>
+              <input
+                placeholder="e.g. Google"
+                value={form.name}
+                onChange={e => setForm({...form, name: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group">
+              <label>Industry *</label>
+              <input
+                placeholder="e.g. Technology"
+                value={form.industry}
+                onChange={e => setForm({...form, industry: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group">
+              <label>Website *</label>
+              <input
+                placeholder="https://..."
+                value={form.website}
+                onChange={e => setForm({...form, website: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group">
+              <label>Address *</label>
+              <input
+                placeholder="Location"
+                value={form.address}
+                onChange={e => setForm({...form, address: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group">
+              <label>HR Contact Name</label>
+              <input
+                placeholder="Contact Person"
+                value={form.hr_contact_name}
+                onChange={e => setForm({...form, hr_contact_name: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group">
+              <label>HR Contact Email</label>
+              <input
+                placeholder="hr@company.com"
+                value={form.hr_contact_email}
+                onChange={e => setForm({...form, hr_contact_email: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group">
+              <label>HR Contact Phone</label>
+              <input
+                placeholder="+91..."
+                value={form.hr_contact_phone}
+                onChange={e => setForm({...form, hr_contact_phone: e.target.value})}
+                className="erp-form-control"
+              />
+            </div>
+            <div className="erp-form-group erp-flex-end erp-pb-2">
+              <label className="erp-flex-center erp-gap-2 erp-cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_approved}
+                  onChange={e => setForm({...form, is_approved: e.target.checked})}
+                  className="erp-checkbox"
+                />
+                <span className="erp-text-sm">Approved</span>
+              </label>
+            </div>
+          </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {loading ? "Adding..." : "Add Company"}
-        </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="erp-btn erp-btn--primary erp-btn--lg"
+          >
+            <i className="fa-solid fa-plus erp-mr-2"></i> {loading ? "Adding..." : "Add Company"}
+          </button>
+        </div>
       </div>
 
       {/* LIST */}
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-lg font-semibold mb-4">Company List</h2>
-        {duplicates.size > 0 && (
-          <div className="bg-yellow-50 border border-yellow-300 p-3 rounded mb-4 text-yellow-800 text-sm">
-            ⚠️ <strong>Exact Duplicates Found:</strong> {duplicates.size} duplicate(s)
-            <br />
-            💡 Tip: Delete the duplicate entry (same name AND address) to clean up your database
+      <div className="erp-card">
+        <div className="erp-card__header">
+          <div>
+            <div className="erp-card__title">Company List</div>
           </div>
-        )}
-        
-        {loading && <p>Loading...</p>}
-        {companies.length === 0 ? (
-          <p className="text-gray-500">No companies found</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border p-2 text-left">ID</th>
-                  <th className="border p-2 text-left">Name</th>
-                  <th className="border p-2 text-left">Industry</th>
-                  <th className="border p-2 text-left">Website</th>
-                  <th className="border p-2 text-left">Address/Location</th>
-                  <th className="border p-2 text-left">HR Contact</th>
-                  <th className="border p-2 text-left">Approved</th>
-                  <th className="border p-2 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies.map(c => (
-                  <tr
-                    key={c.id}
-                    className={`hover:bg-gray-50 ${isDuplicate(c) ? "bg-yellow-100" : ""}`}
-                  >
-                    <td className="border p-2">{c.id}</td>
-                    <td className="border p-2 font-medium">
-                      {c.name}
-                      {isDuplicate(c) && (
-                        <span className="ml-2 text-xs bg-yellow-500 text-white px-2 py-1 rounded">
-                          DUPLICATE
-                        </span>
-                      )}
-                    </td>
-                    <td className="border p-2">{c.industry}</td>
-                    <td className="border p-2">
-                      <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        Visit
-                      </a>
-                    </td>
-                    <td className="border p-2">{c.address}</td>
-                    <td className="border p-2">{c.hr_contact_name || "-"}</td>
-                    <td className="border p-2">{c.is_approved ? "Yes" : "No"}</td>
-                    <td className="border p-2 text-center">
-                      <button
-                        onClick={() => handleDelete(c.id, c.name)}
-                        disabled={loading}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </td>
+        </div>
+
+        <div className="erp-card__body">
+          {duplicates.size > 0 && (
+            <div className="erp-alert erp-alert--warning erp-mb-4">
+              <i className="fa-solid fa-triangle-exclamation"></i>
+              <div>
+                <div className="erp-fw-700">Exact Duplicates Found ({duplicates.size})</div>
+                <div className="erp-text-xs">Tip: Delete duplicate entries to clean up the database.</div>
+              </div>
+            </div>
+          )}
+          
+          {loading && <p className="erp-text-muted erp-p-4">Loading...</p>}
+          {companies.length === 0 ? (
+            <p className="erp-text-muted erp-p-4">No companies found</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="erp-table" data-erp-sortable="true">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Industry</th>
+                    <th>Website</th>
+                    <th>Location</th>
+                    <th>HR Contact</th>
+                    <th>Approved</th>
+                    <th className="erp-text-center">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {companies.map(c => (
+                    <tr key={c.id} className={isDuplicate(c) ? "erp-bg-warning-light" : ""}>
+                      <td>{c.id}</td>
+                      <td>
+                        <div className="erp-flex-center erp-gap-2">
+                          <strong>{c.name}</strong>
+                          {isDuplicate(c) && (
+                            <span className="erp-pill erp-pill--warning erp-pill--sm">
+                              DUPLICATE
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{c.industry}</td>
+                      <td>
+                        <a href={c.website} target="_blank" rel="noopener noreferrer" className="erp-link">
+                          Visit
+                        </a>
+                      </td>
+                      <td>{c.address}</td>
+                      <td>{c.hr_contact_name || "-"}</td>
+                      <td>
+                        <span className={`erp-pill ${c.is_approved ? "erp-pill--success" : "erp-pill--warning"}`}>
+                          {c.is_approved ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="erp-text-center">
+                        <button
+                          onClick={() => handleDelete(c.id, c.name)}
+                          disabled={loading}
+                          className="erp-btn erp-btn--danger erp-btn--sm"
+                        >
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

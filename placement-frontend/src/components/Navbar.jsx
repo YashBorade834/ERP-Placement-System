@@ -1,24 +1,34 @@
 export default function Navbar({ user }) {
   return (
-    <div className="h-16 bg-white shadow flex items-center justify-between px-6">
+    <header className="erp-topbar">
+      <button className="erp-topbar__btn" data-erp-sidebar-toggle="true" title="Toggle menu">
+        <i className="fa-solid fa-bars"></i>
+      </button>
 
-      {/* 🔷 LEFT */}
-      <h2 className="text-lg font-semibold text-gray-700">
-        Placement & Alumni System
-      </h2>
+      <nav className="erp-topbar__breadcrumb" data-erp-breadcrumb="true"></nav>
 
-      {/* 🔷 RIGHT */}
-      <div className="flex items-center gap-4">
-        
-        <span className="text-gray-600">
-          {user.name} ({user.role})
-        </span>
-
-        <button className="bg-purple-600 text-white px-3 py-1 rounded">
-          Logout
-        </button>
-
+      <div className="erp-topbar__search">
+        <i className="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search…" />
       </div>
-    </div>
+
+      <div className="erp-topbar__actions">
+        <div style={{ position: 'relative' }}>
+          <button className="erp-topbar__btn" data-erp-notif-toggle="true" title="Notifications">
+            <i className="fa-regular fa-bell"></i>
+            <span className="erp-dot"></span>
+          </button>
+        </div>
+      </div>
+
+      <div className="erp-topbar__profile">
+        <div className="erp-avatar erp-avatar--md">{user.name.substring(0, 2).toUpperCase()}</div>
+        <div className="erp-profile-info">
+          <p>{user.name}</p>
+          <span>{user.role}</span>
+        </div>
+        <i className="fa-solid fa-chevron-down"></i>
+      </div>
+    </header>
   );
 }

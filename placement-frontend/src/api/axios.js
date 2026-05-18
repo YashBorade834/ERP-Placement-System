@@ -1,12 +1,28 @@
 import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL;
-//  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
+import { API_URL } from "../config";
 
 const instance = axios.create({
   baseURL: API_URL,
-  withCredentials: true   // 🔥 MUST
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
+  },  
 });
+
+// Add a request interceptor to include the auth token
+instance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 instance.interceptors.response.use(
   (response) => response,

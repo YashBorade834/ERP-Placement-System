@@ -7,6 +7,11 @@ class ApplicationCreate(BaseModel):
     """Create student application for a drive"""
     student_id: int   # From SIS or temp dummy
     drive_id: int
+    cgpa: Optional[float] = None
+    gender: Optional[str] = None
+    marks: Optional[float] = None  # Current semester/year marks
+    year: Optional[int] = None  # Academic year (1, 2, 3, 4)
+    backlogs: Optional[int] = 0
 
 
 class ApplicationResponse(BaseModel):
@@ -18,6 +23,11 @@ class ApplicationResponse(BaseModel):
     is_active: bool
     applied_at: datetime
     feedback: Optional[str] = None
+    cgpa: Optional[float] = None
+    gender: Optional[str] = None
+    marks: Optional[float] = None
+    year: Optional[int] = None
+    backlogs: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
 

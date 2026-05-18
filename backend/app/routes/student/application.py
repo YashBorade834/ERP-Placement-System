@@ -8,6 +8,10 @@ from app.models.drive import PlacementDrive
 from app.models.eligibility import EligibilityRule
 from app.models.company import Company
 from app.models.application_status import ApplicationStatus
+from app.models.student_academic import StudentAcademic
+from app.models.workflow import Workflow
+from app.models.drive_round import DriveRound
+import requests
 from app.schemas.student_application import (
     ApplicationCreate,
     ApplicationResponse,
@@ -31,6 +35,7 @@ def get_active_drives(db: Session = Depends(get_db)):
             PlacementDrive.description,
             PlacementDrive.drive_date,
             PlacementDrive.venue,
+            PlacementDrive.package,
             PlacementDrive.company_id,
             Company.name.label("company_name"),
             Company.industry,
@@ -44,9 +49,13 @@ def get_active_drives(db: Session = Depends(get_db)):
             EligibilityRule.min_batch,
             EligibilityRule.max_batch,
             EligibilityRule.other_criteria,
+            Workflow.id.label("workflow_id"),
+            Workflow.description.label("workflow_description"),
+            Workflow.total_rounds,
         )
         .join(Company, PlacementDrive.company_id == Company.id)
         .outerjoin(EligibilityRule, PlacementDrive.id == EligibilityRule.drive_id)
+        .outerjoin(Workflow, PlacementDrive.id == Workflow.drive_id)
         .filter(PlacementDrive.is_published == True, PlacementDrive.is_active == True)
         .all()
     )
@@ -60,25 +69,51 @@ def get_active_drives(db: Session = Depends(get_db)):
                 "description": drive[2],
                 "drive_date": drive[3],
                 "venue": drive[4],
-                "company_id": drive[5],
-                "company_name": drive[6],
-                "industry": drive[7],
-                "address": drive[8],
+                "package": drive[5],
+                "company_id": drive[6],
+                "company_name": drive[7],
+                "industry": drive[8],
+                "address": drive[9],
                 "eligibility": {
-                    "id": drive[9],
-                    "min_cgpa": drive[10],
-                    "max_backlogs": drive[11],
-                    "min_backlogs": drive[12],
-                    "allowed_branches": drive[13],
-                    "gender_restriction": drive[14],
-                    "min_batch": drive[15],
-                    "max_batch": drive[16],
-                    "other_criteria": drive[17],
+                    "id": drive[10],
+                    "min_cgpa": drive[11],
+                    "max_backlogs": drive[12],
+                    "min_backlogs": drive[13],
+                    "allowed_branches": drive[14],
+                    "gender_restriction": drive[15],
+                    "min_batch": drive[16],
+                    "max_batch": drive[17],
+                    "other_criteria": drive[18],
                 }
-                if drive[9]
+                if drive[10]
                 else None,
+                "workflow": {
+                    "id": drive[19],
+                    "description": drive[20],
+                    "total_rounds": drive[21],
+                    "rounds": []
+                } if drive[19] else None
             }
         )
+
+    # ✅ Fetch rounds for each drive that has a workflow
+    for drive_item in result:
+        if drive_item["workflow"]:
+            rounds = db.query(DriveRound).filter(
+                DriveRound.workflow_id == drive_item["workflow"]["id"],
+                DriveRound.is_active == True
+            ).order_by(DriveRound.round_number).all()
+            
+            drive_item["workflow"]["rounds"] = [
+                {
+                    "id": r.id,
+                    "round_number": r.round_number,
+                    "round_name": r.round_name,
+                    "mode": r.mode,
+                    "remarks": r.remarks,
+                    "round_date": r.round_date.isoformat() if r.round_date else None
+                } for r in rounds
+            ]
 
     return result
 
@@ -106,53 +141,105 @@ def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_d
             "mismatches": [],
         }
 
-    # Dummy student data for now (until SIS module integrated)
-    # In production, fetch from SIS model using student_id
-    dummy_student = {
-        "student_id": data.student_id,
-        "cgpa": 8.0,  # Dummy: Change based on SIS data
-        "backlogs": 0,  # Dummy
-        "branch": "CSE",  # Dummy
-        "batch": 2023,  # Dummy
-        "gender": "Male",  # Dummy
-    }
+    # --- 1. LOCAL ACADEMIC DATA ---
+    academic = db.query(StudentAcademic).filter(StudentAcademic.student_id == data.student_id).first()
+    cgpa = academic.cgpa if academic and academic.cgpa else 0.0
+    backlogs = academic.current_backlogs if academic else 0
+    local_batch = academic.batch_year if academic else None
+    local_gender = academic.gender if academic else None
+
+    try:
+        # Fetch actual data from SIS module
+        from app.config import SIS_BASE_URL
+        sis_url = f"{SIS_BASE_URL}/api/students/{data.student_id}"
+        sis_response = requests.get(sis_url, timeout=5)
+        
+        if sis_response.status_code == 200:
+            sis_data = sis_response.json()
+            # If response is a list, take the first element (based on Ngrok guid.txt example)
+            if isinstance(sis_data, list) and len(sis_data) > 0:
+                sis_data = sis_data[0]
+            
+            # Extract academic details from SIS response
+            # Mapping based on SIS response structure in Ngrok guid.txt
+            branch = sis_data.get("enrollment", {}).get("department", "UNKNOWN")
+            batch_str = sis_data.get("enrollment", {}).get("batch", "0")
+            # Handle batch as integer
+            try:
+                batch = int(batch_str) if batch_str else 0
+            except ValueError:
+                batch = 0
+                
+            gender = sis_data.get("gender", "UNKNOWN")
+            
+            # Use local data if present, otherwise SIS data
+            student_data = {
+                "student_id": data.student_id,
+                "cgpa": cgpa,  # From Placement local DB
+                "backlogs": backlogs,  # From Placement local DB
+                "branch": branch, # Always from SIS for now
+                "batch": local_batch if local_batch else batch,
+                "gender": local_gender if local_gender else gender,
+            }
+        else:
+            print(f"SIS module returned status {sis_response.status_code}")
+            # Fallback to local data
+            student_data = {
+                "student_id": data.student_id,
+                "cgpa": cgpa,
+                "backlogs": backlogs,
+                "branch": "UNKNOWN",
+                "batch": local_batch if local_batch else 0,
+                "gender": local_gender if local_gender else "UNKNOWN",
+            }
+    except Exception as e:
+        print(f"Failed to fetch from SIS: {e}")
+        # Fallback to local data
+        student_data = {
+            "student_id": data.student_id,
+            "cgpa": cgpa,
+            "backlogs": backlogs,
+            "branch": "UNKNOWN",
+            "batch": local_batch if local_batch else 0,
+            "gender": local_gender if local_gender else "UNKNOWN",
+        }
 
     mismatches = []
 
     # Check CGPA
     if (
         eligibility.min_cgpa
-        and dummy_student["cgpa"] < eligibility.min_cgpa
+        and student_data["cgpa"] < eligibility.min_cgpa
     ):
         mismatches.append(
-            f"CGPA: Need minimum {eligibility.min_cgpa}, yours is {dummy_student['cgpa']}"
+            f"CGPA: Need minimum {eligibility.min_cgpa}, yours is {student_data['cgpa']}"
         )
 
     # Check Backlogs
     if (
         eligibility.max_backlogs is not None
-        and dummy_student["backlogs"] > eligibility.max_backlogs
+        and student_data["backlogs"] > eligibility.max_backlogs
     ):
         mismatches.append(
-            f"Backlogs: Maximum allowed {eligibility.max_backlogs}, you have {dummy_student['backlogs']}"
+            f"Backlogs: Maximum allowed {eligibility.max_backlogs}, you have {student_data['backlogs']}"
         )
 
     # Check Branch
     if eligibility.allowed_branches:
         allowed = [b.strip().upper() for b in eligibility.allowed_branches.split(",")]
-        if dummy_student["branch"].upper() not in allowed:
+        if student_data["branch"].upper() not in allowed:
             mismatches.append(
-                f"Branch: You are {dummy_student['branch']}, allowed are {eligibility.allowed_branches}"
+                f"Branch: You are {student_data['branch']}, allowed are {eligibility.allowed_branches}"
             )
 
     # Check Batch
-    if eligibility.min_batch and dummy_student["batch"] < eligibility.min_batch:
+    if eligibility.min_batch and student_data["batch"] < eligibility.min_batch:
         mismatches.append(
-            f"Batch: Minimum {eligibility.min_batch}, you are {dummy_student['batch']}"
+            f"Batch: Minimum {eligibility.min_batch}, you are {student_data['batch']}"
         )
-    if eligibility.max_batch and dummy_student["batch"] > eligibility.max_batch:
+    if eligibility.max_batch and student_data["batch"] > eligibility.max_batch:
         mismatches.append(
-            f"Batch: Maximum {eligibility.max_batch}, you are {dummy_student['batch']}"
+            f"Batch: Maximum {eligibility.max_batch}, you are {student_data['batch']}"
         )
 
     # Check Gender
@@ -160,9 +247,9 @@ def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_d
         eligibility.gender_restriction
         and eligibility.gender_restriction.upper() != "ANY"
     ):
-        if dummy_student["gender"].upper() != eligibility.gender_restriction.upper():
+        if student_data["gender"].upper() != eligibility.gender_restriction.upper():
             mismatches.append(
-                f"Gender: Required {eligibility.gender_restriction}, you are {dummy_student['gender']}"
+                f"Gender: Required {eligibility.gender_restriction}, you are {student_data['gender']}"
             )
 
     eligible = len(mismatches) == 0
@@ -314,6 +401,50 @@ def get_my_applications(student_id: int, db: Session = Depends(get_db)):
     return result
 
 
+# 📊 GET ALL APPLICATIONS (For Admins) - MUST BE BEFORE /{application_id} to avoid route conflict
+@router.get("/application/all", response_model=list)
+def get_all_applications(db: Session = Depends(get_db)):
+    """
+    Get all student applications with drive details and latest status (For Admin Dashboard)
+    """
+    try:
+        # Get all student applications
+        all_apps = db.query(StudentApplication).order_by(StudentApplication.applied_at.desc()).all()
+        
+        result = []
+        for app in all_apps:
+            # Get drive details
+            drive = db.query(PlacementDrive).filter(PlacementDrive.id == app.drive_id).first()
+            company = db.query(Company).filter(Company.id == drive.company_id).first() if drive else None
+            
+            # Get latest application status
+            latest_status = db.query(ApplicationStatus).filter(
+                ApplicationStatus.application_id == app.id
+            ).order_by(ApplicationStatus.id.desc()).first()
+            
+            result.append({
+                "id": app.id,
+                "student_id": app.student_id,
+                "drive_id": app.drive_id,
+                "application_status": latest_status.status if latest_status else app.application_status,
+                "is_active": app.is_active,
+                "applied_at": app.applied_at.isoformat() if app.applied_at else None,
+                "feedback": app.feedback,
+                "created_at": app.created_at.isoformat() if app.created_at else None,
+                "drive_title": drive.title if drive else "N/A",
+                "venue": drive.venue if drive else "N/A",
+                "drive_date": drive.drive_date.isoformat() if drive and drive.drive_date else None,
+                "company_name": company.name if company else "N/A",
+                "remarks": latest_status.remarks if latest_status else None,
+                "status_date": latest_status.status_date.isoformat() if latest_status and latest_status.status_date else None,
+            })
+        
+        return result
+    except Exception as e:
+        print(f"Error in get_all_applications: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ✅ GET SINGLE APPLICATION
 @router.get("/application/{application_id}", response_model=dict)
 def get_application(application_id: int, db: Session = Depends(get_db)):
@@ -386,47 +517,3 @@ def check_eligibility_simple(drive_id: int, student_id: int, db: Session = Depen
         "eligible": True,
         "message": "Eligible (default logic)"
     }
-
-
-# 📊 GET ALL APPLICATIONS (For Admins)
-@router.get("/application/all")
-def get_all_applications(db: Session = Depends(get_db)):
-    """
-    Get all student applications with drive details and latest status (For Admin Dashboard)
-    """
-    try:
-        # Get all student applications
-        all_apps = db.query(StudentApplication).order_by(StudentApplication.applied_at.desc()).all()
-        
-        result = []
-        for app in all_apps:
-            # Get drive details
-            drive = db.query(PlacementDrive).filter(PlacementDrive.id == app.drive_id).first()
-            company = db.query(Company).filter(Company.id == drive.company_id).first() if drive else None
-            
-            # Get latest application status
-            latest_status = db.query(ApplicationStatus).filter(
-                ApplicationStatus.application_id == app.id
-            ).order_by(ApplicationStatus.id.desc()).first()
-            
-            result.append({
-                "id": app.id,
-                "student_id": app.student_id,
-                "drive_id": app.drive_id,
-                "application_status": latest_status.status if latest_status else app.application_status,
-                "is_active": app.is_active,
-                "applied_at": app.applied_at,
-                "feedback": app.feedback,
-                "created_at": app.created_at,
-                "drive_title": drive.title if drive else "N/A",
-                "venue": drive.venue if drive else "N/A",
-                "drive_date": drive.drive_date if drive else None,
-                "company_name": company.name if company else "N/A",
-                "remarks": latest_status.remarks if latest_status else None,
-                "status_date": latest_status.status_date if latest_status else None,
-            })
-        
-        return result
-    except Exception as e:
-        print(f"Error in get_all_applications: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))

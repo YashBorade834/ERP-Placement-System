@@ -1,16 +1,18 @@
 import axios from "./axios";
 
-// 📋 GET ALL APPLICATIONS FOR A DRIVE
+// 📋 GET ALL APPLICATIONS (across all drives, for admin page)
+export const getAllApplications = () =>
+  axios.get("/student/application/all");
+
+// 📋 GET ALL APPLICATIONS FOR A SPECIFIC DRIVE
 export const getApplicationsForDrive = (driveId) =>
-axios.get(`${API_URL}/admin/applications`);
+  axios.get(`/admin/application/drive/${driveId}/applications`);
 
-
-
-// � GET TOTAL APPLICATIONS COUNT
+// 📊 GET TOTAL APPLICATIONS COUNT
 export const getApplicationsCount = () =>
   axios.get(`/admin/application/applications/count`);
 
-// �🔧 SET CUSTOM STATUS + REMARKS
+// 🔧 SET CUSTOM STATUS + REMARKS (overall, uses round_id=1 as fallback)
 export const setApplicationStatus = (applicationId, driveRoundId, status, remarks) =>
   axios.post(`/admin/application/${applicationId}/status`, null, {
     params: {
@@ -38,7 +40,7 @@ export const selectApplication = (applicationId, remarks = "") =>
     params: { remarks },
   });
 
-// 📊 GET ALL APPLICATIONS STATUSES
+// 📊 GET ALL APPLICATION STATUSES
 export const getAllApplicationStatuses = () =>
   axios.get("/admin/application/");
 
@@ -49,3 +51,13 @@ export const getApplicationStatuses = (applicationId) =>
 // 🔍 GET LATEST STATUS FOR ONE APPLICATION
 export const getLatestApplicationStatus = (applicationId) =>
   axios.get(`/admin/application/${applicationId}/status/latest`);
+
+// 🔄 GET ROUND-WISE STATUSES FOR AN APPLICATION
+export const getRoundStatuses = (applicationId) =>
+  axios.get(`/admin/application/${applicationId}/round-statuses`);
+
+// 🔄 UPSERT STATUS FOR A SPECIFIC ROUND
+export const setRoundStatus = (applicationId, roundId, status, remarks = "") =>
+  axios.post(`/admin/application/${applicationId}/round/${roundId}/status`, null, {
+    params: { status, remarks },
+  });

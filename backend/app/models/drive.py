@@ -14,6 +14,7 @@ class PlacementDrive(Base):
 
     drive_date = Column(Date, nullable=True)
     venue = Column(String, nullable=True)
+    package = Column(String, nullable=True)
 
     is_published = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)

@@ -10,6 +10,7 @@ class OfferBase(BaseModel):
     position: str
     package: str
     status: str
+    reason: Optional[str] = None
 
 
 class OfferCreate(OfferBase):
@@ -22,6 +23,7 @@ class OfferUpdate(BaseModel):
     position: Optional[str] = None
     package: Optional[str] = None
     status: Optional[str] = None
+    reason: Optional[str] = None
 
 
 class OfferResponse(OfferBase):
@@ -31,3 +33,7 @@ class OfferResponse(OfferBase):
 
     # ✅ Pydantic V2 config
     model_config = ConfigDict(from_attributes=True)
+
+
+class RejectOfferRequest(BaseModel):
+    reason: str
