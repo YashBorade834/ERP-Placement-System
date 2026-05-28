@@ -1,0 +1,478 @@
+﻿diff --git a/placement-frontend/src/pages/student/Dashboard.jsx b/placement-frontend/src/pages/student/Dashboard.jsx
+index 5b0c15e..8d1e6fb 100644
+--- a/placement-frontend/src/pages/student/Dashboard.jsx
++++ b/placement-frontend/src/pages/student/Dashboard.jsx
+@@ -142,229 +142,234 @@ export default function StudentDashboard() {
+   };
+ 
+   return (
+-    <div className="min-h-screen bg-gray-50">
++    <>
+       {/* HEADER */}
+-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8">
+-        <h1 className="text-4xl font-bold">≡ƒÄ» Student Dashboard</h1>
+-        <p className="mt-2 text-blue-100">Student ID: {STUDENT_ID} | Find and apply for placement drives</p>
++      <div className="erp-page-title">
++        <h1>≡ƒÄ» Student Dashboard</h1>
++        <p>Student ID: {STUDENT_ID} | Find and apply for placement drives</p>
+       </div>
+ 
+-      {/* MAIN CONTENT */}
+-      <div className="max-w-7xl mx-auto p-6">
+-        {/* MESSAGES */}
+-        {error && <div className="bg-red-100 text-red-700 p-4 rounded mb-4 flex justify-between items-center">
+-          <span>{error}</span>
+-          <button onClick={() => setError("")} className="text-red-700 font-bold">Γ£ò</button>
+-        </div>}
+-        {success && <div className="bg-green-100 text-green-700 p-4 rounded mb-4 flex justify-between items-center">
+-          <span>{success}</span>
+-          <button onClick={() => setSuccess("")} className="text-green-700 font-bold">Γ£ò</button>
+-        </div>}
+-
+-        {/* TABS */}
+-        <div className="flex gap-4 mb-6">
+-          <button
+-            onClick={() => setActiveTab("available")}
+-            className={`px-6 py-3 rounded font-semibold transition ${
+-              activeTab === "available"
+-                ? "bg-blue-600 text-white"
+-                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+-            }`}
+-          >
+-            ≡ƒôï Available Drives ({drives.length})
++      {/* MESSAGES */}
++      {error && (
++        <div className="erp-alert erp-alert--danger erp-mb-4 flex justify-between items-center">
++          <div><i className="fa-solid fa-circle-xmark"></i><span>{error}</span></div>
++          <button onClick={() => setError("")} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit' }}>
++            <i className="fa-solid fa-xmark"></i>
+           </button>
+-          <button
+-            onClick={() => setActiveTab("my-applications")}
+-            className={`px-6 py-3 rounded font-semibold transition ${
+-              activeTab === "my-applications"
+-                ? "bg-blue-600 text-white"
+-                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+-            }`}
+-          >
+-            ≡ƒôè My Applications ({myApplications.length})
++        </div>
++      )}
++      {success && (
++        <div className="erp-alert erp-alert--success erp-mb-4 flex justify-between items-center">
++          <div><i className="fa-solid fa-circle-check"></i><span>{success}</span></div>
++          <button onClick={() => setSuccess("")} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit' }}>
++            <i className="fa-solid fa-xmark"></i>
+           </button>
+         </div>
++      )}
+ 
+-        {/* TAB 1: AVAILABLE DRIVES */}
+-        {activeTab === "available" && (
+-          <div className="space-y-4">
+-            {loading ? (
+-              <div className="text-center py-8 text-gray-500">Loading drives...</div>
+-            ) : drives.length === 0 ? (
+-              <div className="text-center py-8 text-gray-500">No active drives available right now</div>
+-            ) : (
+-              drives.map(drive => (
+-                <div key={drive.id} className="bg-white p-6 rounded shadow-md hover:shadow-lg transition border-l-4 border-blue-500">
+-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+-                    {/* Left: Drive Info */}
+-                    <div className="md:col-span-2">
+-                      <h3 className="text-xl font-bold text-gray-800">{drive.title}</h3>
+-                      <p className="text-gray-600 text-sm mt-1">≡ƒôì {drive.company_name} - {drive.venue}</p>
+-                      <p className="text-gray-600 text-sm">≡ƒÅó Industry: {drive.industry}</p>
+-                      {drive.drive_date && <p className="text-gray-600 text-sm">≡ƒôà Drive Date: {drive.drive_date}</p>}
+-                      {drive.description && (
+-                        <p className="text-gray-600 text-sm mt-2 line-clamp-2">{drive.description}</p>
+-                      )}
+-                    </div>
++      {/* TABS */}
++      <div className="erp-tabs erp-mb-6">
++        <button
++          onClick={() => setActiveTab("available")}
++          className={`erp-tabs__btn ${activeTab === "available" ? "active" : ""}`}
++        >
++          ≡ƒôï Available Drives ({drives.length})
++        </button>
++        <button
++          onClick={() => setActiveTab("my-applications")}
++          className={`erp-tabs__btn ${activeTab === "my-applications" ? "active" : ""}`}
++        >
++          ≡ƒôè My Applications ({myApplications.length})
++        </button>
++      </div>
+ 
+-                    {/* Middle: Eligibility Info */}
+-                    {drive.eligibility && (
+-                      <div className="bg-blue-50 p-3 rounded border-l-2 border-blue-400">
+-                        <h4 className="font-semibold text-sm text-gray-700 mb-2">Eligibility Criteria:</h4>
+-                        <ul className="text-xs text-gray-600 space-y-1">
+-                          {drive.eligibility.min_cgpa && <li>≡ƒôè Min CGPA: {drive.eligibility.min_cgpa}</li>}
+-                          {drive.eligibility.allowed_branches && (
+-                            <li>≡ƒÄô Branches: {drive.eligibility.allowed_branches}</li>
+-                          )}
+-                          {drive.eligibility.min_batch && (
+-                            <li>≡ƒôå Batch: {drive.eligibility.min_batch}-{drive.eligibility.max_batch}</li>
+-                          )}
+-                          {drive.eligibility.max_backlogs !== null && (
+-                            <li>Γ¥î Max Backlogs: {drive.eligibility.max_backlogs}</li>
+-                          )}
+-                        </ul>
+-                      </div>
++      {/* TAB 1: AVAILABLE DRIVES */}
++      {activeTab === "available" && (
++        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
++          {loading ? (
++            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--erp-text-muted)' }}>Loading drives...</div>
++          ) : drives.length === 0 ? (
++            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--erp-text-muted)' }}>No active drives available right now</div>
++          ) : (
++            drives.map(drive => (
++              <div key={drive.id} className="erp-card" style={{ borderLeft: '4px solid var(--erp-primary)', padding: '20px' }}>
++                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
++                  {/* Left: Drive Info */}
++                  <div>
++                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--erp-dark)', margin: '0 0 8px 0' }}>{drive.title}</h3>
++                    <p style={{ fontSize: '13px', color: 'var(--erp-text-muted)', margin: '0 0 4px 0' }}>≡ƒôì {drive.company_name} - {drive.venue}</p>
++                    <p style={{ fontSize: '13px', color: 'var(--erp-text-muted)', margin: '0 0 4px 0' }}>≡ƒÅó Industry: {drive.industry}</p>
++                    {drive.drive_date && <p style={{ fontSize: '13px', color: 'var(--erp-text-muted)', margin: '0 0 4px 0' }}>≡ƒôà Drive Date: {drive.drive_date}</p>}
++                    {drive.description && (
++                      <p style={{ fontSize: '13px', color: 'var(--erp-text-muted)', marginTop: '8px' }}>{drive.description}</p>
+                     )}
++                  </div>
+ 
+-                    {/* Right: Action Buttons */}
+-                    <div className="flex flex-col gap-2 justify-center">
+-                      {hasApplied(drive.id) ? (
+-                        <button
+-                          disabled
+-                          className="w-full bg-gray-400 text-white px-4 py-2 rounded font-semibold cursor-not-allowed"
+-                        >
+-                          Γ£ô Already Applied
+-                        </button>
+-                      ) : (
+-                        <button
+-                          onClick={() => handleCheckEligibility(drive)}
+-                          disabled={eligibilityLoading || loading}
+-                          className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-semibold transition disabled:bg-gray-400"
+-                        >
+-                          {eligibilityLoading ? "Checking..." : "Γ£ô Apply Now"}
+-                        </button>
+-                      )}
++                  {/* Middle: Eligibility Info */}
++                  {drive.eligibility && (
++                    <div style={{ backgroundColor: 'var(--erp-surface)', padding: '12px', borderRadius: 'var(--erp-radius)', borderLeft: '2px solid var(--erp-info)' }}>
++                      <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--erp-dark)', margin: '0 0 8px 0' }}>Eligibility Criteria:</h4>
++                      <ul style={{ fontSize: '12px', color: 'var(--erp-text-muted)', margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
++                        {drive.eligibility.min_cgpa && <li>≡ƒôè Min CGPA: {drive.eligibility.min_cgpa}</li>}
++                        {drive.eligibility.allowed_branches && (
++                          <li>≡ƒÄô Branches: {drive.eligibility.allowed_branches}</li>
++                        )}
++                        {drive.eligibility.min_batch && (
++                          <li>≡ƒôå Batch: {drive.eligibility.min_batch}-{drive.eligibility.max_batch}</li>
++                        )}
++                        {drive.eligibility.max_backlogs !== null && (
++                          <li>Γ¥î Max Backlogs: {drive.eligibility.max_backlogs}</li>
++                        )}
++                      </ul>
+                     </div>
++                  )}
++
++                  {/* Right: Action Buttons */}
++                  <div style={{ display: 'flex', alignItems: 'center' }}>
++                    {hasApplied(drive.id) ? (
++                      <button
++                        disabled
++                        className="erp-btn erp-btn--ghost"
++                        style={{ width: '100%', opacity: 0.7, pointerEvents: 'none' }}
++                      >
++                        <i className="fa-solid fa-check"></i> Already Applied
++                      </button>
++                    ) : (
++                      <button
++                        onClick={() => handleCheckEligibility(drive)}
++                        disabled={eligibilityLoading || loading}
++                        className="erp-btn erp-btn--success"
++                        style={{ width: '100%' }}
++                      >
++                        {eligibilityLoading ? "Checking..." : "Γ£ô Apply Now"}
++                      </button>
++                    )}
+                   </div>
+                 </div>
+-              ))
+-            )}
+-          </div>
+-        )}
+-
+-        {/* TAB 2: MY APPLICATIONS */}
+-        {activeTab === "my-applications" && (
+-          <div className="space-y-4">
+-            {myApplications.length === 0 ? (
+-              <div className="text-center py-8 text-gray-500">
+-                No applications yet. <span className="cursor-pointer text-blue-600 hover:underline" onClick={() => setActiveTab("available")}>Apply for drives</span>
+               </div>
+-            ) : (
+-              myApplications.map(app => (
+-                <div key={app.id} className="bg-white p-6 rounded shadow-md border-l-4 border-purple-500">
+-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+-                    {/* Application Info */}
+-                    <div className="md:col-span-2">
+-                      <div className="flex justify-between items-start mb-2">
+-                        <div>
+-                          <h3 className="text-xl font-bold text-gray-800">{app.drive_title}</h3>
+-                          <p className="text-gray-600 text-sm">≡ƒÅó {app.company_name} ΓÇó ≡ƒôì {app.venue}</p>
+-                        </div>
+-                        <span className={`px-3 py-1 rounded text-sm font-semibold ${getStatusBadgeColor(app.application_status)}`}>
+-                          {getStatusEmoji(app.application_status)} {app.application_status}
+-                        </span>
+-                      </div>
++            ))
++          )}
++        </div>
++      )}
+ 
+-                      <div className="text-sm text-gray-600 space-y-1 mt-3">
+-                        <p>≡ƒôñ Applied: {new Date(app.applied_at).toLocaleDateString()}</p>
+-                        {app.drive_date && <p>≡ƒôà Drive Date: {app.drive_date}</p>}
+-                        {app.feedback && <p>≡ƒÆ¼ Feedback: {app.feedback}</p>}
++      {/* TAB 2: MY APPLICATIONS */}
++      {activeTab === "my-applications" && (
++        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
++          {myApplications.length === 0 ? (
++            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--erp-text-muted)' }}>
++              No applications yet. <span style={{ cursor: 'pointer', color: 'var(--erp-primary)', textDecoration: 'underline' }} onClick={() => setActiveTab("available")}>Apply for drives</span>
++            </div>
++          ) : (
++            myApplications.map(app => (
++              <div key={app.id} className="erp-card" style={{ borderLeft: '4px solid var(--erp-purple)', padding: '20px' }}>
++                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
++                  {/* Application Info */}
++                  <div>
++                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
++                      <div>
++                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--erp-dark)', margin: '0 0 4px 0' }}>{app.drive_title}</h3>
++                        <p style={{ fontSize: '13px', color: 'var(--erp-text-muted)', margin: 0 }}>≡ƒÅó {app.company_name} ΓÇó ≡ƒôì {app.venue}</p>
+                       </div>
++                      <span className={`erp-pill ${
++                        app.application_status === 'APPLIED' ? 'erp-pill--primary' :
++                        app.application_status === 'SHORTLISTED' ? 'erp-pill--warning' :
++                        app.application_status === 'SELECTED' ? 'erp-pill--success' :
++                        app.application_status === 'REJECTED' ? 'erp-pill--danger' :
++                        app.application_status === 'WITHDRAWN' ? 'erp-pill--ghost' : ''
++                      }`}>
++                        {getStatusEmoji(app.application_status)} {app.application_status}
++                      </span>
+                     </div>
+ 
+-                    {/* Status & Actions */}
+-                    <div className="flex flex-col gap-2 justify-between">
+-                      <div className="bg-purple-50 p-3 rounded">
+-                        <p className="text-xs text-gray-600 font-semibold mb-1">STATUS DETAILS</p>
+-                        <p className="text-sm font-bold text-purple-600">{app.application_status}</p>
+-                        {app.feedback && <p className="text-xs text-gray-600 mt-1">{app.feedback}</p>}
+-                      </div>
++                    <div style={{ fontSize: '13px', color: 'var(--erp-text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '12px' }}>
++                      <p style={{ margin: 0 }}>≡ƒôñ Applied: {new Date(app.applied_at).toLocaleDateString()}</p>
++                      {app.drive_date && <p style={{ margin: 0 }}>≡ƒôà Drive Date: {app.drive_date}</p>}
++                      {app.feedback && <p style={{ margin: 0 }}>≡ƒÆ¼ Feedback: {app.feedback}</p>}
++                    </div>
++                  </div>
+ 
+-                      {app.is_active && app.application_status === "APPLIED" && (
+-                        <button
+-                          onClick={() => handleWithdraw(app.id)}
+-                          disabled={loading}
+-                          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold transition disabled:bg-gray-400"
+-                        >
+-                          ≡ƒùæ∩╕Å Withdraw
+-                        </button>
+-                      )}
++                  {/* Status & Actions */}
++                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between' }}>
++                    <div style={{ backgroundColor: 'var(--erp-purple-light, #f3e8ff)', padding: '12px', borderRadius: 'var(--erp-radius)' }}>
++                      <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--erp-text-muted)', margin: '0 0 4px 0' }}>STATUS DETAILS</p>
++                      <p style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--erp-purple)', margin: 0 }}>{app.application_status}</p>
++                      {app.feedback && <p style={{ fontSize: '11px', color: 'var(--erp-text-muted)', marginTop: '4px', marginBottom: 0 }}>{app.feedback}</p>}
+                     </div>
++
++                    {app.is_active && app.application_status === "APPLIED" && (
++                      <button
++                        onClick={() => handleWithdraw(app.id)}
++                        disabled={loading}
++                        className="erp-btn erp-btn--danger erp-btn--sm"
++                        style={{ marginTop: 'auto' }}
++                      >
++                        <i className="fa-solid fa-trash"></i> Withdraw
++                      </button>
++                    )}
+                   </div>
+                 </div>
+-              ))
+-            )}
+-          </div>
+-        )}
+-      </div>
++              </div>
++            ))
++          )}
++        </div>
++      )}
+ 
+       {/* ELIGIBILITY CHECK MODAL */}
+       {showEligibilityModal && selectedDrive && eligibilityCheck && (
+-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
++        <div className="erp-modal-backdrop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
++          <div className="erp-modal" style={{ display: 'block', position: 'relative', width: '100%', maxWidth: '600px', margin: '0 20px' }}>
+             {/* Header */}
+-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 rounded-t-lg">
+-              <h2 className="text-2xl font-bold">Eligibility Check</h2>
+-              <p className="text-blue-100">Position: {selectedDrive.title} at {selectedDrive.company_name}</p>
++            <div className="erp-modal__header" style={{ background: 'var(--erp-primary)', color: 'white', borderRadius: 'var(--erp-radius) var(--erp-radius) 0 0' }}>
++              <h3 className="erp-modal__title" style={{ color: 'white' }}>Eligibility Check</h3>
++              <button className="erp-modal__close" onClick={() => setShowEligibilityModal(false)} style={{ color: 'white' }}>
++                <i className="fa-solid fa-xmark"></i>
++              </button>
+             </div>
+ 
+             {/* Content */}
+-            <div className="p-6 space-y-4">
++            <div className="erp-modal__body">
++              <p style={{ marginBottom: '16px', color: 'var(--erp-text-muted)' }}>
++                Position: <strong>{selectedDrive.title}</strong> at <strong>{selectedDrive.company_name}</strong>
++              </p>
++
+               {/* Eligibility Status */}
+-              <div
+-                className={`p-4 rounded-lg ${
+-                  eligibilityCheck.eligible
+-                    ? "bg-green-50 border-l-4 border-green-500"
+-                    : "bg-red-50 border-l-4 border-red-500"
+-                }`}
+-              >
+-                <h3 className={`font-bold text-lg ${eligibilityCheck.eligible ? "text-green-700" : "text-red-700"}`}>
+-                  {eligibilityCheck.eligible ? "Γ£ô You Are Eligible!" : "Γ£ù Not Eligible"}
+-                </h3>
+-                <p className={`text-sm ${eligibilityCheck.eligible ? "text-green-600" : "text-red-600"}`}>
++              <div className={`erp-alert ${eligibilityCheck.eligible ? 'erp-alert--success' : 'erp-alert--danger'}`} style={{ marginBottom: '20px' }}>
++                <i className={`fa-solid ${eligibilityCheck.eligible ? 'fa-circle-check' : 'fa-circle-xmark'}`}></i>
++                <span>
++                  <strong>{eligibilityCheck.eligible ? "You Are Eligible!" : "Not Eligible"}</strong><br/>
+                   {eligibilityCheck.message}
+-                </p>
++                </span>
+               </div>
+ 
+               {/* Eligibility Details */}
+               {selectedDrive.eligibility && (
+-                <div>
+-                  <h4 className="font-semibold text-gray-700 mb-2">Required Criteria:</h4>
+-                  <div className="bg-gray-50 p-4 rounded space-y-2 text-sm">
++                <div style={{ marginBottom: '20px' }}>
++                  <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--erp-dark)', marginBottom: '8px' }}>Required Criteria:</h4>
++                  <div style={{ backgroundColor: 'var(--erp-surface)', padding: '16px', borderRadius: 'var(--erp-radius)', fontSize: '13px' }}>
+                     {selectedDrive.eligibility.min_cgpa && (
+-                      <p className="flex justify-between">
+-                        <span>≡ƒôè Minimum CGPA:</span>
+-                        <span className="font-semibold">{selectedDrive.eligibility.min_cgpa}</span>
++                      <p style={{ display: 'flex', justifyContent: 'space-between', margin: '0 0 8px 0' }}>
++                        <span style={{ color: 'var(--erp-text-muted)' }}>≡ƒôè Minimum CGPA:</span>
++                        <span style={{ fontWeight: 600 }}>{selectedDrive.eligibility.min_cgpa}</span>
+                       </p>
+                     )}
+                     {selectedDrive.eligibility.allowed_branches && (
+-                      <p className="flex justify-between">
+-                        <span>≡ƒÄô Allowed Branches:</span>
+-                        <span className="font-semibold">{selectedDrive.eligibility.allowed_branches}</span>
++                      <p style={{ display: 'flex', justifyContent: 'space-between', margin: '0 0 8px 0' }}>
++                        <span style={{ color: 'var(--erp-text-muted)' }}>≡ƒÄô Allowed Branches:</span>
++                        <span style={{ fontWeight: 600 }}>{selectedDrive.eligibility.allowed_branches}</span>
+                       </p>
+                     )}
+                     {selectedDrive.eligibility.min_batch && (
+-                      <p className="flex justify-between">
+-                        <span>≡ƒôå Batch Range:</span>
+-                        <span className="font-semibold">
++                      <p style={{ display: 'flex', justifyContent: 'space-between', margin: '0 0 8px 0' }}>
++                        <span style={{ color: 'var(--erp-text-muted)' }}>≡ƒôå Batch Range:</span>
++                        <span style={{ fontWeight: 600 }}>
+                           {selectedDrive.eligibility.min_batch} - {selectedDrive.eligibility.max_batch}
+                         </span>
+                       </p>
+                     )}
+                     {selectedDrive.eligibility.max_backlogs !== null && (
+-                      <p className="flex justify-between">
+-                        <span>Γ¥î Max Backlogs:</span>
+-                        <span className="font-semibold">{selectedDrive.eligibility.max_backlogs}</span>
++                      <p style={{ display: 'flex', justifyContent: 'space-between', margin: 0 }}>
++                        <span style={{ color: 'var(--erp-text-muted)' }}>Γ¥î Max Backlogs:</span>
++                        <span style={{ fontWeight: 600 }}>{selectedDrive.eligibility.max_backlogs}</span>
+                       </p>
+                     )}
+                   </div>
+@@ -373,11 +378,11 @@ export default function StudentDashboard() {
+ 
+               {/* Mismatches */}
+               {eligibilityCheck.mismatches && eligibilityCheck.mismatches.length > 0 && (
+-                <div>
+-                  <h4 className="font-semibold text-red-700 mb-2">ΓÜá∩╕Å Eligibility Issues:</h4>
+-                  <div className="bg-red-50 p-4 rounded space-y-2">
++                <div style={{ marginBottom: '20px' }}>
++                  <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--erp-danger)', marginBottom: '8px' }}>ΓÜá∩╕Å Eligibility Issues:</h4>
++                  <div style={{ backgroundColor: '#fef2f2', padding: '16px', borderRadius: 'var(--erp-radius)', border: '1px solid #fecaca' }}>
+                     {eligibilityCheck.mismatches.map((mismatch, idx) => (
+-                      <p key={idx} className="text-sm text-red-600">
++                      <p key={idx} style={{ fontSize: '13px', color: 'var(--erp-danger)', margin: idx === eligibilityCheck.mismatches.length - 1 ? 0 : '0 0 8px 0' }}>
+                         ΓÇó {mismatch}
+                       </p>
+                     ))}
+@@ -386,28 +391,27 @@ export default function StudentDashboard() {
+               )}
+ 
+               {/* Dummy Student Data Note */}
+-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-sm text-yellow-700">
+-                <p className="font-semibold mb-1">≡ƒÆí Note:</p>
+-                <p>Your student data is currently using dummy values. Once SIS module integration is complete, actual student details will be used for eligibility checking.</p>
++              <div className="erp-alert erp-alert--warning" style={{ margin: 0 }}>
++                <i className="fa-solid fa-lightbulb"></i>
++                <span>
++                  <strong>Note:</strong> Your student data is currently using dummy values. Once SIS module integration is complete, actual student details will be used for eligibility checking.
++                </span>
+               </div>
+             </div>
+ 
+             {/* Buttons */}
+-            <div className="border-t p-6 flex gap-3 justify-end">
++            <div style={{ padding: '16px 20px', borderTop: '1px solid var(--erp-border)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+               <button
+                 onClick={() => setShowEligibilityModal(false)}
+-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded font-semibold hover:bg-gray-50"
++                className="erp-btn erp-btn--outline"
+               >
+                 Cancel
+               </button>
+               <button
+                 onClick={handleApply}
+                 disabled={!eligibilityCheck.eligible || loading}
+-                className={`px-6 py-2 rounded font-semibold text-white transition ${
+-                  eligibilityCheck.eligible
+-                    ? "bg-green-500 hover:bg-green-600"
+-                    : "bg-gray-400 cursor-not-allowed"
+-                }`}
++                className={`erp-btn ${eligibilityCheck.eligible ? 'erp-btn--success' : 'erp-btn--ghost'}`}
++                style={!eligibilityCheck.eligible ? { opacity: 0.5, pointerEvents: 'none' } : {}}
+               >
+                 {loading ? "Applying..." : "Γ£ô Confirm Application"}
+               </button>
+@@ -415,6 +419,6 @@ export default function StudentDashboard() {
+           </div>
+         </div>
+       )}
+-    </div>
++    </>
+   );
+ }
+\ No newline at end of file

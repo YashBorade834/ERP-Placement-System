@@ -18,7 +18,7 @@ def create_offer(data: OfferCreate, db: Session = Depends(get_db)):
     ).order_by(ApplicationStatus.id.desc()).first()
 
     # ✅ Check latest status
-    if not latest_status or latest_status.status != "Selected":
+    if not latest_status or latest_status.status.lower() != "selected":
         raise HTTPException(
             status_code=400,
             detail="Offer can only be given to selected students"

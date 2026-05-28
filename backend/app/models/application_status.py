@@ -1,6 +1,15 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey
+import enum
+from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Enum as SQLAlchemyEnum
 from sqlalchemy.sql import func
 from app.database import Base
+
+
+class ApplicationStatusEnum(str, enum.Enum):
+    applied = "applied"
+    shortlisted = "shortlisted"
+    selected = "selected"
+    rejected = "rejected"
+    withdrawn = "withdrawn"
 
 
 class ApplicationStatus(Base):
@@ -11,7 +20,7 @@ class ApplicationStatus(Base):
     application_id = Column(Integer, ForeignKey("student_application.id"))
     drive_round_id = Column(Integer, ForeignKey("drive_rounds.id"))
 
-    status = Column(String, nullable=False)
+    status = Column(SQLAlchemyEnum(ApplicationStatusEnum, native_enum=False), nullable=False)
     remarks = Column(String, nullable=True)
     status_date = Column(Date, nullable=False)
 

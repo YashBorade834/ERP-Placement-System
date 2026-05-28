@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from app.dependencies.auth import get_current_user, require_admin 
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.drive import PlacementDrive
@@ -8,7 +9,7 @@ from app.models.drive_round import DriveRound
 from app.schemas.drive import DriveCreate, DriveUpdate, DriveResponse, DriveCreateComplete
 from app.utils.notification import send_bulk_notification
 
-router = APIRouter(tags=["Admin - Drive"])
+router = APIRouter(tags=["Admin - Drive"], dependencies=[Depends(require_admin)])
 
 
 # 🔹 DB Dependency

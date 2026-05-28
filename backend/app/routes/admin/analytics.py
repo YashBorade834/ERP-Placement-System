@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from app.dependencies.auth import get_current_user, require_admin 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
@@ -6,7 +7,7 @@ from app.models.company import Company
 from app.models.drive import PlacementDrive
 from app.models.student_application import StudentApplication
 
-router = APIRouter(prefix="/admin/analytics", tags=["Analytics"])
+router = APIRouter(prefix="/admin/analytics", tags=["Analytics"], dependencies=[Depends(require_admin )])
 
 @router.get("/summary")
 def get_analytics_summary(db: Session = Depends(get_db)):

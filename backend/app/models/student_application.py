@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float, Enum as SQLAlchemyEnum
 from datetime import datetime, timezone
 
 from app.database import Base
+from app.models.application_status import ApplicationStatusEnum
 
 
 class StudentApplication(Base):
@@ -11,7 +12,7 @@ class StudentApplication(Base):
     student_id = Column(Integer, nullable=False)  # From SIS module
     drive_id = Column(Integer, ForeignKey("placement_drives.id"), nullable=False)
     applied_at = Column(DateTime, default=datetime.now(timezone.utc))
-    application_status = Column(String, default="APPLIED")
+    application_status = Column(SQLAlchemyEnum(ApplicationStatusEnum, native_enum=False), default=ApplicationStatusEnum.applied)
     is_active = Column(Boolean, default=True)
     feedback = Column(String, nullable=True)
     # Student eligibility data (collected at application time)

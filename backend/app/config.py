@@ -7,9 +7,22 @@ load_dotenv()
 # Environment Toggle
 USE_NGROK = os.getenv("USE_NGROK", "true").lower() == "true"
 
+# JWT configuration for authentication
+def _get_env(key: str, default: str = "") -> str:
+    return os.getenv(key, default)
+
+# Development bypass flag for authentication
+def _str_to_bool(val: str) -> bool:
+    return val.lower() in ("true", "1", "yes")
+
+BYPASS_AUTH = _str_to_bool(os.getenv("BYPASS_AUTH", "false"))
+
+JWT_SECRET_KEY = _get_env("JWT_SECRET_KEY", "supersecretkey")
+JWT_ALGORITHM = _get_env("JWT_ALGORITHM", "HS256")
+
 # SIS Module Configuration
 SIS_LOCAL_URL = os.getenv("SIS_LOCAL_URL", "http://localhost:8001")
-SIS_NGROK_URL = os.getenv("SIS_NGROK_URL", "https://enactment-commode-configure.ngrok-free.dev")
+SIS_NGROK_URL = os.getenv("SIS_NGROK_URL", "https://gone-magnolia-empty.ngrok-free.dev")
 
 SIS_BASE_URL = SIS_NGROK_URL if USE_NGROK else SIS_LOCAL_URL
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from app.dependencies.auth import get_current_user, require_admin 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 from app.database import get_db
@@ -7,11 +8,12 @@ from app.models.application_status import ApplicationStatus
 from app.models.student_application import StudentApplication
 from app.models.drive import PlacementDrive
 from app.models.company import Company
+from app.models.application_status import ApplicationStatusEnum
 from app.schemas.offer import OfferCreate, OfferUpdate, OfferResponse
 from datetime import date
 from pydantic import BaseModel
 
-router = APIRouter(tags=["Offers"])
+router = APIRouter(tags=["Offers"], dependencies=[Depends(require_admin)])
 
 # Schema for release offers request
 class ReleaseOffersRequest(BaseModel):
@@ -20,7 +22,7 @@ class ReleaseOffersRequest(BaseModel):
     offers: list[dict]  # List of {application_id, position, package, offer_letter_path}
 
 
-# ✅ GET DRIVES WITH SELECTED APPLICATIONS
+#  GET DRIVES WITH SELECTED APPLICATIONS
 @router.get("/drives/with-selected-students", response_model=list[dict])
 def get_drives_with_selected_students(db: Session = Depends(get_db)):
     """Get all drives that have applications with 'Selected' status in all rounds"""
@@ -41,7 +43,7 @@ def get_drives_with_selected_students(db: Session = Depends(get_db)):
     ).join(
         Company, Company.id == PlacementDrive.company_id
     ).filter(
-        ApplicationStatus.status == "SELECTED"
+        ApplicationStatus.status == ApplicationStatusEnum.selected
     ).group_by(
         StudentApplication.drive_id,
         PlacementDrive.title,
@@ -66,7 +68,7 @@ def get_drives_with_selected_students(db: Session = Depends(get_db)):
     return result
 
 
-# ✅ GET SELECTED STUDENTS FOR A DRIVE
+#  GET SELECTED STUDENTS FOR A DRIVE
 @router.get("/drives/{drive_id}/selected-students", response_model=list[dict])
 async def get_selected_students_for_drive(drive_id: int, db: Session = Depends(get_db)):
     """Get all selected students for a specific drive"""
@@ -80,18 +82,18 @@ async def get_selected_students_for_drive(drive_id: int, db: Session = Depends(g
     ).filter(
         and_(
             StudentApplication.drive_id == drive_id,
-            ApplicationStatus.status == "SELECTED"
+            ApplicationStatus.status == ApplicationStatusEnum.selected
         )
     ).distinct().all()
     
     result = []
-    from app.utils.sis_service import SISService
+    from app.services.sis_client import SISClient
     
     for app in selected_apps:
         # Fetch student name from SIS
         student_name = "Student " + str(app.student_id)
         try:
-            sis_data = await SISService.get_student_details(app.student_id)
+            sis_data = await SISClient().get_student_details(app.student_id)
             if sis_data:
                 student_name = f"{sis_data.get('first_name', '')} {sis_data.get('last_name', '')}".strip() or student_name
         except Exception as e:
@@ -107,7 +109,7 @@ async def get_selected_students_for_drive(drive_id: int, db: Session = Depends(g
     return result
 
 
-# ✅ RELEASE OFFERS FOR A DRIVE
+#  RELEASE OFFERS FOR A DRIVE
 @router.post("/release-offers")
 def release_offers(data: ReleaseOffersRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Release offers for all selected students in a drive"""
@@ -140,7 +142,7 @@ def release_offers(data: ReleaseOffersRequest, background_tasks: BackgroundTasks
                 ApplicationStatus.application_id == application_id
             ).order_by(ApplicationStatus.id.desc()).first()
             
-            if not latest_status or latest_status.status != "SELECTED":
+            if not latest_status or latest_status.status != ApplicationStatusEnum.selected:
                 errors.append(f"Application {application_id} is not in selected status")
                 continue
             
@@ -175,9 +177,9 @@ def release_offers(data: ReleaseOffersRequest, background_tasks: BackgroundTasks
             background_tasks.add_task(
                 send_student_notification,
                 student_id=app.student_id,
-                event_type="Arrival of new offer",
-                title="Offer Arrivalr",
-                message="Please check Your Offer",
+                event_type="Placement Offer Released",
+                title="Congratulations! You have been selected",
+                message=f"Congratulations! You have been selected for the position of {position} at {company_name} Please log in to the College Portal and view your further Details.",
                 delivery_modes=["email"],
                 department="All"
             )
@@ -201,7 +203,7 @@ def create_offer(data: OfferCreate, background_tasks: BackgroundTasks, db: Sessi
     ).order_by(ApplicationStatus.id.desc()).first()
 
     # ✅ Check latest status
-    if not latest_status or latest_status.status != "SELECTED":
+    if not latest_status or latest_status.status != ApplicationStatusEnum.selected:
         raise HTTPException(
             status_code=400,
             detail="Offer can only be given to selected students"
@@ -237,9 +239,9 @@ def create_offer(data: OfferCreate, background_tasks: BackgroundTasks, db: Sessi
             background_tasks.add_task(
                 send_student_notification,
                 student_id=app.student_id,
-                event_type="Arrival of new offer",
-                title="Offer Arrivalr",
-                message="Please check Your Offer",
+                event_type="Placement Offer Released",
+                title="Congratulations! You have been selected",
+                message=f"Congratulations! You have been selected at {company_name} Please log in to the College Portal and view your further Details.",
                 delivery_modes=["email"],
                 department="All"
             )

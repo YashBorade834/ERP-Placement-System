@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from app.dependencies.auth import get_current_user, require_admin 
 from sqlalchemy.orm import Session, joinedload
 from datetime import date
 from typing import Optional
 from app.utils.notification import send_student_notification
 
 from app.database import get_db
-from app.models.application_status import ApplicationStatus
+from app.models.application_status import ApplicationStatus, ApplicationStatusEnum
 from app.models.student_application import StudentApplication
 from app.models.drive import PlacementDrive
 from app.models.workflow import Workflow
@@ -16,29 +17,24 @@ from app.schemas.application_status import (
     ApplicationStatusResponse
 )
 
-router = APIRouter(prefix="", tags=["Admin - Application Status"])
+router = APIRouter(prefix="", tags=["Admin - Application Status"], dependencies=[Depends(require_admin)])
 
-@router.get("/admin/applications")
-def get_all_applications(db: Session = Depends(get_db)):
+@router.get("/applications")
+async def get_all_applications(db: Session = Depends(get_db)):
     applications = db.query(StudentApplication)\
         .options(joinedload(StudentApplication.student))\
         .options(joinedload(StudentApplication.drive))\
         .all()
 
     result = []
-    from app.config import SIS_BASE_URL
-    import requests
+
     
     for app in applications:
         student_name = "Student " + str(app.student_id)
         try:
-            sis_url = f"{SIS_BASE_URL}/api/students/{app.student_id}"
-            sis_res = requests.get(sis_url, timeout=1)
-            if sis_res.status_code == 200:
-                sis_data = sis_res.json()
-                if isinstance(sis_data, list) and len(sis_data) > 0:
-                    sis_data = sis_data[0]
-                student_name = f"{sis_data.get('first_name', '')} {sis_data.get('last_name', '')}".strip() or student_name
+                sis_data = await SISClient().get_student_details(app.student_id)
+                if sis_data:
+                    student_name = f"{sis_data.get('first_name', '')} {sis_data.get('last_name', '')}".strip() or student_name
         except:
             pass
             
@@ -48,7 +44,7 @@ def get_all_applications(db: Session = Depends(get_db)):
             "student_name": student_name,
             "drive_id": app.drive_id,
             "drive_title": app.drive.title if app.drive else "N/A",
-            "application_status": app.application_status,
+            "application_status": app.application_status.upper(),
             "applied_at": app.applied_at
         }
         result.append(app_dict)
@@ -101,7 +97,7 @@ def get_round_statuses(application_id: int, db: Session = Depends(get_db)):
             "round_name": r.round_name,
             "mode": r.mode,
             "remarks_description": r.remarks,
-            "status": status_record.status if status_record else "APPLIED",
+            "application_status": status_record.status.upper() if status_record else ApplicationStatusEnum.applied.upper(),
             "remarks": status_record.remarks if status_record else "",
             "status_id": status_record.id if status_record else None,
         })
@@ -124,6 +120,7 @@ def set_round_status(
     If a status already exists for (application_id + round_id), update it.
     Otherwise create a new one.
     """
+    status = status.lower()
     app = db.query(StudentApplication).filter(
         StudentApplication.id == application_id
     ).first()
@@ -207,7 +204,7 @@ def set_application_status(
     Admin sets application status for a specific round.
     Status examples: PENDING, SHORTLISTED, SELECTED, REJECTED, etc.
     """
-    
+    status = status.lower()
     # Verify application exists
     app = db.query(StudentApplication).filter(
         StudentApplication.id == application_id
@@ -279,7 +276,7 @@ def get_latest_status(application_id: int, db: Session = Depends(get_db)):
         return {
             "id": None,
             "application_id": application_id,
-            "status": "APPLIED",
+            "status": ApplicationStatusEnum.applied,
             "remarks": "Application submitted",
             "status_date": date.today(),
             "drive_round_id": None,
@@ -316,10 +313,10 @@ def shortlist(
     drive_title = drive.title if drive else "Placement Drive"
 
     obj = ApplicationStatus(
-        application_id=application_id,
-        drive_round_id=1,
-        status="SHORTLISTED",
-        remarks=remarks or "Shortlisted for next round",
+        application_id=app.id,
+        drive_round_id=None,
+        status=ApplicationStatusEnum.shortlisted,
+        remarks=f"Shortlisted for {drive.title}",
         status_date=date.today()
     )
     db.add(obj)
@@ -358,10 +355,10 @@ def reject(
     drive_title = drive.title if drive else "Placement Drive"
 
     obj = ApplicationStatus(
-        application_id=application_id,
-        drive_round_id=1,
-        status="REJECTED",
-        remarks=remarks or "Not selected",
+        application_id=app.id,
+        drive_round_id=None,
+        status=ApplicationStatusEnum.rejected,
+        remarks=f"Rejected from {drive.title}",
         status_date=date.today()
     )
     db.add(obj)
@@ -402,7 +399,7 @@ def select(
     obj = ApplicationStatus(
         application_id=application_id,
         drive_round_id=1,
-        status="SELECTED",
+        status=ApplicationStatusEnum.selected,
         remarks=remarks or "Congratulations! You are selected",
         status_date=date.today()
     )
@@ -423,12 +420,12 @@ def select(
 
 # 📊 GET ALL APPLICATIONS FOR A DRIVE (For Admin Dashboard)
 @router.get("/drive/{drive_id}/applications")
-def get_applications_for_drive(drive_id: int, db: Session = Depends(get_db)):
+async def get_applications_for_drive(drive_id: int, db: Session = Depends(get_db)):
     """
     Get all applications for a specific drive with latest status.
     Used by admin to manage application statuses.
     """
-    from app.models.drive import PlacementDrive
+    from app.services.sis_client import SISClient
     from app.models.company import Company
     from sqlalchemy import func
     
@@ -473,18 +470,13 @@ def get_applications_for_drive(drive_id: int, db: Session = Depends(get_db)):
     )
     
     result = []
-    from app.config import SIS_BASE_URL
-    import requests
+    from app.services.sis_client import SISClient
     
     for app in apps:
         student_name = "Student " + str(app[1])
         try:
-            sis_url = f"{SIS_BASE_URL}/api/students/{app[1]}"
-            sis_res = requests.get(sis_url, timeout=1)
-            if sis_res.status_code == 200:
-                sis_data = sis_res.json()
-                if isinstance(sis_data, list) and len(sis_data) > 0:
-                    sis_data = sis_data[0]
+            sis_data = await SISClient().get_student_details(app[1])
+            if sis_data:
                 student_name = f"{sis_data.get('first_name', '')} {sis_data.get('last_name', '')}".strip() or student_name
         except:
             pass
@@ -495,7 +487,7 @@ def get_applications_for_drive(drive_id: int, db: Session = Depends(get_db)):
                 "student_id": app[1],
                 "student_name": student_name,
                 "drive_id": app[2],
-                "application_status": app[9],  # latest_status
+                "application_status": app[9].upper(),  # Use latest_status
                 "is_active": app[4],
                 "applied_at": app[5],
                 "feedback": app[6],

@@ -7,11 +7,11 @@ from app.models.student_application import StudentApplication
 from app.models.drive import PlacementDrive
 from app.models.eligibility import EligibilityRule
 from app.models.company import Company
-from app.models.application_status import ApplicationStatus
+from app.models.application_status import ApplicationStatus, ApplicationStatusEnum
 from app.models.student_academic import StudentAcademic
 from app.models.workflow import Workflow
 from app.models.drive_round import DriveRound
-import requests
+
 from app.schemas.student_application import (
     ApplicationCreate,
     ApplicationResponse,
@@ -120,12 +120,11 @@ def get_active_drives(db: Session = Depends(get_db)):
 
 # ✅ CHECK ELIGIBILITY (Before applying)
 @router.post("/check-eligibility")
-def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_db)):
+async def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_db)):
     """
     Check if student meets drive eligibility criteria.
     Returns eligibility status and any mismatches.
     """
-
     # Get drive eligibility
     eligibility = (
         db.query(EligibilityRule)
@@ -149,51 +148,26 @@ def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_d
     local_gender = academic.gender if academic else None
 
     try:
-        # Fetch actual data from SIS module
-        from app.config import SIS_BASE_URL
-        sis_url = f"{SIS_BASE_URL}/api/students/{data.student_id}"
-        sis_response = requests.get(sis_url, timeout=5)
-        
-        if sis_response.status_code == 200:
-            sis_data = sis_response.json()
-            # If response is a list, take the first element (based on Ngrok guid.txt example)
-            if isinstance(sis_data, list) and len(sis_data) > 0:
-                sis_data = sis_data[0]
-            
-            # Extract academic details from SIS response
-            # Mapping based on SIS response structure in Ngrok guid.txt
+        sis_data = await SISClient().get_student_details(data.student_id)
+        if sis_data:
             branch = sis_data.get("enrollment", {}).get("department", "UNKNOWN")
             batch_str = sis_data.get("enrollment", {}).get("batch", "0")
-            # Handle batch as integer
             try:
                 batch = int(batch_str) if batch_str else 0
             except ValueError:
                 batch = 0
-                
             gender = sis_data.get("gender", "UNKNOWN")
-            
-            # Use local data if present, otherwise SIS data
-            student_data = {
-                "student_id": data.student_id,
-                "cgpa": cgpa,  # From Placement local DB
-                "backlogs": backlogs,  # From Placement local DB
-                "branch": branch, # Always from SIS for now
-                "batch": local_batch if local_batch else batch,
-                "gender": local_gender if local_gender else gender,
-            }
-        else:
-            print(f"SIS module returned status {sis_response.status_code}")
-            # Fallback to local data
             student_data = {
                 "student_id": data.student_id,
                 "cgpa": cgpa,
                 "backlogs": backlogs,
-                "branch": "UNKNOWN",
-                "batch": local_batch if local_batch else 0,
-                "gender": local_gender if local_gender else "UNKNOWN",
+                "branch": branch,
+                "batch": local_batch if local_batch else batch,
+                "gender": local_gender if local_gender else gender,
             }
+        else:
+            raise Exception("No SIS data")
     except Exception as e:
-        print(f"Failed to fetch from SIS: {e}")
         # Fallback to local data
         student_data = {
             "student_id": data.student_id,
@@ -205,88 +179,52 @@ def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_d
         }
 
     mismatches = []
-
     # Check CGPA
-    if (
-        eligibility.min_cgpa
-        and student_data["cgpa"] < eligibility.min_cgpa
-    ):
-        mismatches.append(
-            f"CGPA: Need minimum {eligibility.min_cgpa}, yours is {student_data['cgpa']}"
-        )
-
+    if eligibility.min_cgpa and student_data["cgpa"] < eligibility.min_cgpa:
+        mismatches.append(f"CGPA: Need minimum {eligibility.min_cgpa}, yours is {student_data['cgpa']}")
     # Check Backlogs
-    if (
-        eligibility.max_backlogs is not None
-        and student_data["backlogs"] > eligibility.max_backlogs
-    ):
-        mismatches.append(
-            f"Backlogs: Maximum allowed {eligibility.max_backlogs}, you have {student_data['backlogs']}"
-        )
-
+    if eligibility.max_backlogs is not None and student_data["backlogs"] > eligibility.max_backlogs:
+        mismatches.append(f"Backlogs: Maximum allowed {eligibility.max_backlogs}, you have {student_data['backlogs']}")
     # Check Branch
     if eligibility.allowed_branches:
         allowed = [b.strip().upper() for b in eligibility.allowed_branches.split(",")]
         if student_data["branch"].upper() not in allowed:
-            mismatches.append(
-                f"Branch: You are {student_data['branch']}, allowed are {eligibility.allowed_branches}"
-            )
-
+            mismatches.append(f"Branch: You are {student_data['branch']}, allowed are {eligibility.allowed_branches}")
     # Check Batch
     if eligibility.min_batch and student_data["batch"] < eligibility.min_batch:
-        mismatches.append(
-            f"Batch: Minimum {eligibility.min_batch}, you are {student_data['batch']}"
-        )
+        mismatches.append(f"Batch: Minimum {eligibility.min_batch}, you are {student_data['batch']}")
     if eligibility.max_batch and student_data["batch"] > eligibility.max_batch:
-        mismatches.append(
-            f"Batch: Maximum {eligibility.max_batch}, you are {student_data['batch']}"
-        )
-
+        mismatches.append(f"Batch: Maximum {eligibility.max_batch}, you are {student_data['batch']}")
     # Check Gender
-    if (
-        eligibility.gender_restriction
-        and eligibility.gender_restriction.upper() != "ANY"
-    ):
+    if eligibility.gender_restriction and eligibility.gender_restriction.upper() != "ANY":
         if student_data["gender"].upper() != eligibility.gender_restriction.upper():
-            mismatches.append(
-                f"Gender: Required {eligibility.gender_restriction}, you are {student_data['gender']}"
-            )
-
+            mismatches.append(f"Gender: Required {eligibility.gender_restriction}, you are {student_data['gender']}")
+    
     eligible = len(mismatches) == 0
-
     return {
         "eligible": eligible,
-        "message": "Eligible to apply ✓"
-        if eligible
-        else "Not eligible due to the following mismatches:",
+        "message": "Eligible to apply ✓" if eligible else "Not eligible due to the following mismatches:",
         "mismatches": mismatches,
     }
 
 
 # ✅ APPLY FOR DRIVE (WITH ELIGIBILITY CHECK)
 @router.post("/apply", response_model=dict)
-def apply_drive(data: ApplicationCreate, db: Session = Depends(get_db)):
+async def apply_drive(data: ApplicationCreate, db: Session = Depends(get_db)):
     """
     Apply for a drive with automatic eligibility checking
     """
-
     student_id = data.student_id
-
     # 🔹 Check drive exists and is available
     drive = db.query(PlacementDrive).filter(PlacementDrive.id == data.drive_id).first()
-
     if not drive:
         raise HTTPException(status_code=404, detail="Drive not found")
-
     if not drive.is_active:
         raise HTTPException(status_code=400, detail="Drive is not active")
-
     if not drive.is_published:
         raise HTTPException(status_code=400, detail="Drive not published")
-
     if not drive.registration_open:
         raise HTTPException(status_code=400, detail="Registration closed for this drive")
-
     # 🔹 Check duplicate application
     existing = (
         db.query(StudentApplication)
@@ -296,37 +234,29 @@ def apply_drive(data: ApplicationCreate, db: Session = Depends(get_db)):
         )
         .first()
     )
-
     if existing:
-        raise HTTPException(
-            status_code=400, detail="You already applied for this drive"
-        )
-
+        raise HTTPException(status_code=400, detail="You already applied for this drive")
     # 🔹 Check eligibility (call eligibility check)
-    eligibility_check = check_eligibility(
+    eligibility_check = await check_eligibility(
         EligibilityCheckRequest(student_id=student_id, drive_id=data.drive_id),
         db,
     )
-
     if not eligibility_check["eligible"]:
         raise HTTPException(
             status_code=400,
             detail=f"Not eligible: {', '.join(eligibility_check['mismatches'])}",
         )
-
     # 🔹 Create application
     new_app = StudentApplication(
         student_id=student_id,
         drive_id=data.drive_id,
         applied_at=datetime.utcnow(),
-        application_status="APPLIED",
+        application_status=ApplicationStatusEnum.applied,
         is_active=True,
     )
-
     db.add(new_app)
     db.commit()
     db.refresh(new_app)
-
     return {
         "success": True,
         "message": "Applied successfully! ✓",
@@ -403,7 +333,7 @@ def get_my_applications(student_id: int, db: Session = Depends(get_db)):
 
 # 📊 GET ALL APPLICATIONS (For Admins) - MUST BE BEFORE /{application_id} to avoid route conflict
 @router.get("/application/all", response_model=list)
-def get_all_applications(db: Session = Depends(get_db)):
+async def get_all_applications(db: Session = Depends(get_db)):
     """
     Get all student applications with drive details and latest status (For Admin Dashboard)
     """
@@ -494,7 +424,10 @@ def withdraw_application(application_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Application already withdrawn")
 
     app.is_active = False
-    app.application_status = "WITHDRAWN"
+    app.application_status = ApplicationStatusEnum.withdrawn
+    
+    # 2. Add an explicit 'WITHDRAWN' entry to the application_status table
+    # This keeps history (e.g. Applied -> Shortlisted -> Withdrawn)
     db.commit()
 
     return {"message": "Application withdrawn successfully"}

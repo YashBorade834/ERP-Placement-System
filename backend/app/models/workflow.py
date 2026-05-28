@@ -8,6 +8,6 @@ class Workflow(Base):
     id = Column(Integer, primary_key=True, index=True)
     drive_id = Column(Integer, ForeignKey("placement_drives.id"))
     description = Column(String)
-    total_rounds = Column(Integer)  # ✅ NEW
+    total_rounds = Column(Integer)  # NEW
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now()) 

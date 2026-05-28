@@ -2,11 +2,12 @@ from pydantic import BaseModel, ConfigDict
 from datetime import date, datetime
 from typing import Optional
 
+from app.models.application_status import ApplicationStatusEnum
 
 class ApplicationStatusBase(BaseModel):
     application_id: int
     drive_round_id: int
-    status: str
+    status: ApplicationStatusEnum
     remarks: Optional[str] = None
     status_date: date
 
@@ -16,7 +17,7 @@ class ApplicationStatusCreate(ApplicationStatusBase):
 
 
 class ApplicationStatusUpdate(BaseModel):
-    status: Optional[str] = None
+    status: Optional[ApplicationStatusEnum] = None
     remarks: Optional[str] = None
     status_date: Optional[date] = None
 

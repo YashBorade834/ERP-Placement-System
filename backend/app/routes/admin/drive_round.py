@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from app.dependencies.auth import get_current_user,require_admin 
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.drive_round import DriveRound
 from app.schemas.drive_round import RoundCreate, RoundResponse
 
-router = APIRouter(tags=["Drive Rounds"])
+router = APIRouter(tags=["Drive Rounds"], dependencies=[Depends(require_admin)])
 
 
 @router.post("/{workflow_id}/rounds", response_model=RoundResponse)

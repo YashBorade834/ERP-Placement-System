@@ -1,5 +1,6 @@
 import httpx
 import logging
+from app.services.sis_client import SISClient
 from typing import List, Optional
 from app.config import NOTIFICATION_BASE_URL, NOTIFICATION_API_KEY
 
@@ -84,10 +85,9 @@ async def send_student_notification(
     """
     Helper to fetch student details from SIS and send a notification.
     """
-    from app.utils.sis_service import SISService
     
     # 1. Fetch student details from SIS
-    sis_data = await SISService.get_student_details(student_id)
+    sis_data = await SISClient().get_student_details(student_id)
     
     email = sis_data.get("email_id") or sis_data.get("email")
     if not sis_data or not email:

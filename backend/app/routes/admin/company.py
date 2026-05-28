@@ -1,10 +1,13 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
+from app.dependencies.auth import get_current_user, require_admin 
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.company import Company
+from app.models.mou import MOU
 from app.schemas.company import CompanyCreate, CompanyResponse, CompanyUpdate
 
-router = APIRouter(tags=["Admin - Company"])
+router = APIRouter(tags=["Admin - Company"], dependencies=[Depends(require_admin)])
 
 
 # DB Dependency
@@ -77,6 +80,17 @@ def delete_company(company_id: int, db: Session = Depends(get_db)):
 
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+
+    # Cascade delete any associated MOUs (files & database entries)
+    mous = db.query(MOU).filter(MOU.company_id == company_id).all()
+    for mou in mous:
+        if mou.file_path and os.path.exists(mou.file_path):
+            try:
+                os.remove(mou.file_path)
+            except Exception as e:
+                print(f"Warning: Failed to delete file {mou.file_path} during cascade delete: {e}")
+        db.delete(mou)
+    db.flush()
 
     company_name = company.name
     db.delete(company)

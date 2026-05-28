@@ -12,8 +12,8 @@ async def get_academic_profile(student_id: int, db: Session = Depends(get_db)):
     
     if not academic:
         # Fallback: Check SIS Module using SISService
-        from app.utils.sis_service import SISService
-        sis_data = await SISService.get_student_details(student_id)
+        from app.services.sis_client import SISClient
+        sis_data = await SISClient().get_student_details(student_id)
         
         if sis_data:
             # Student found in SIS! Create local record automatically
