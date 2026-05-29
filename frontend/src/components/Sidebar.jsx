@@ -115,10 +115,10 @@ export default function Sidebar({ user }) {
         <button
           onClick={handleLogout}
           className="erp-btn erp-btn--danger erp-btn--block erp-btn--sm"
-          style={{ justifyContent: 'center' }}
+          aria-label="Log out"
         >
           <i className="fa-solid fa-right-from-bracket erp-mr-2"></i>
-          Logout System
+          Logout
         </button>
       </div>
     </aside>

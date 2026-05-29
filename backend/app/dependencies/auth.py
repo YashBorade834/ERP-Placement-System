@@ -30,6 +30,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     print("BYPASS_AUTH: ", BYPASS_AUTH)
     if BYPASS_AUTH and token == "dummy-session-token":
         # Development shortcut – treat as logged‑in admin user when using dummy session
+        print("Student logged in via dev bypass (dummy token).")
         return {"user_id": 0, "role": "admin"}
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
@@ -113,6 +114,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     # For now, accept any username/password and return a token with sub=username.
     # In production you must verify password hash.
     access_token = create_access_token({"sub": form_data.username})
+    print(f"Student {form_data.username} logged in via token endpoint.")
     return {"access_token": access_token, "token_type": "bearer"}
 
 # New endpoint: return current user info for frontend verification

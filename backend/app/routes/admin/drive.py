@@ -9,6 +9,7 @@ from app.models.drive_round import DriveRound
 from app.schemas.drive import DriveCreate, DriveUpdate, DriveResponse, DriveCreateComplete
 from app.utils.notification import send_bulk_notification
 
+
 router = APIRouter(tags=["Admin - Drive"], dependencies=[Depends(require_admin)])
 
 
@@ -34,6 +35,7 @@ def create_complete_drive(data: DriveCreateComplete, db: Session = Depends(get_d
             title=data.title,
             description=data.description,
             drive_date=data.drive_date,
+
             venue=data.venue,
             package=data.package,
             is_published=data.is_published,
@@ -131,16 +133,21 @@ async def publish_drive(drive_id: int, background_tasks: BackgroundTasks, db: Se
 
     # Trigger Bulk Notification
     background_tasks.add_task(
+        print(" notification sent "),
         send_bulk_notification,
         event_type="New Drive Arrived",
         title="Apply Now",
-        message="Apply Now For a Drive",
+        message="Apply Now For a Drive {drive.title}",
         recipient_roles=["student"],
         delivery_modes=["email", "sms", "whatsapp"],
-        department="BSc CS"
+        department="All"
+        
     )
 
     return {"message": "Drive published"}
+
+
+
 
 
 # 🔥 UNPUBLISH DRIVE
