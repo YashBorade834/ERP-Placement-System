@@ -48,9 +48,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         # Determine role heuristically if not in payload
         role_from_token = payload.get("role", "")
         if role_from_token:
-            role = "admin" if role_from_token.lower() == "admin" else "student"
+            role_lower = role_from_token.lower()
+            if role_lower in ("admin", "tpo", "placement_officer"):
+                role = "tpo" if role_lower in ("tpo", "placement_officer") else "admin"
+            else:
+                role = "student"
         else:
-            role = "admin" if "admin" in str(sub).lower() else "student"
+            sub_str = str(sub).lower()
+            if "admin" in sub_str:
+                role = "admin"
+            elif "tpo" in sub_str or "placement_officer" in sub_str:
+                role = "tpo"
+            else:
+                role = "student"
             
         return {
             "user_id": final_user_id, 
@@ -78,9 +88,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
                 
                 role_from_token = payload.get("role", "")
                 if role_from_token:
-                    role = "admin" if role_from_token.lower() == "admin" else "student"
+                    role_lower = role_from_token.lower()
+                    if role_lower in ("admin", "tpo", "placement_officer"):
+                        role = "tpo" if role_lower in ("tpo", "placement_officer") else "admin"
+                    else:
+                        role = "student"
                 else:
-                    role = "admin" if "admin" in str(sub).lower() else "student"
+                    sub_str = str(sub).lower()
+                    if "admin" in sub_str:
+                        role = "admin"
+                    elif "tpo" in sub_str or "placement_officer" in sub_str:
+                        role = "tpo"
+                    else:
+                        role = "student"
                     
                 return {
                     "user_id": final_user_id,
@@ -98,10 +118,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 def require_admin(user: dict = Depends(get_current_user)):
     role = str(user.get("role", "")).lower()
 
-    if role != "admin":
+    if role not in ("admin", "tpo"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            detail="Admin/TPO access required"
         )
 
     return user

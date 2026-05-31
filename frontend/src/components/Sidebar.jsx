@@ -44,7 +44,7 @@ export default function Sidebar({ user }) {
       <nav className="erp-sidebar__nav">
 
         {/*================== ADMIN ==================*/}
-        {user.role === "admin" && (
+        {(user.role === "admin" || user.role === "tpo") && (
           <>
             <div className="erp-nav-label">Admin Menu</div>
             <Link to="/admin/dashboard" className={getNavClass('/admin/dashboard')}>
@@ -66,6 +66,10 @@ export default function Sidebar({ user }) {
             <Link to="/admin/offers" className={getNavClass('/admin/offers')}>
               <i className="fa-solid fa-envelope-circle-check"></i>
               <span className="erp-nav-item__text">Manage Offers</span>
+            </Link>
+            <Link to="/admin/offer-report" className={getNavClass('/admin/offer-report')}>
+              <i className="fa-solid fa-chart-bar"></i>
+              <span className="erp-nav-item__text">Offer Report</span>
             </Link>
           </>
         )}

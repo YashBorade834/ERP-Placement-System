@@ -118,6 +118,38 @@ def get_active_drives(db: Session = Depends(get_db)):
     return result
 
 
+def normalize_branch(name: str) -> str:
+    if not name:
+        return "UNKNOWN"
+    name_clean = name.strip().upper()
+    
+    # Computer Science / Computer Engineering / CSE / CS / COMP
+    if any(x in name_clean for x in ["COMPUTER SCIENCE", "COMPUTER ENGINEERING", "CSE", "COMP", "CS"]):
+        return "CSE"
+        
+    # Information Technology / IT
+    if any(x in name_clean for x in ["INFORMATION TECHNOLOGY", "INFO TECH", "IT"]):
+        return "IT"
+        
+    # Electronics / ENTC / ECE
+    if any(x in name_clean for x in ["ELECTRONICS", "TELECOMMUNICATION", "ENTC", "ECE", "E&TC", "EXTC"]):
+        return "ECE"
+        
+    # Mechanical Engineering
+    if any(x in name_clean for x in ["MECHANICAL", "MECH", "ME"]):
+        return "MECH"
+        
+    # Civil Engineering
+    if any(x in name_clean for x in ["CIVIL"]):
+        return "CIVIL"
+        
+    # Electrical Engineering
+    if any(x in name_clean for x in ["ELECTRICAL", "EE"]):
+        return "EE"
+        
+    return name_clean
+
+
 # ✅ CHECK ELIGIBILITY (Before applying)
 @router.post("/check-eligibility")
 async def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends(get_db)):
@@ -148,15 +180,47 @@ async def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends
     local_gender = academic.gender if academic else None
 
     try:
-        sis_data = await SISClient().get_student_details(data.student_id)
+        from app.services.sis_client import SISClient
+        sis_client = SISClient()
+        sis_data = await sis_client.get_student_details(data.student_id)
+        sis_acad = await sis_client.get_student_academic_data(data.student_id)
+        
+        # Merge both dictionaries for maximum field coverage
+        merged_sis = {}
         if sis_data:
-            branch = sis_data.get("enrollment", {}).get("department", "UNKNOWN")
-            batch_str = sis_data.get("enrollment", {}).get("batch", "0")
+            merged_sis.update(sis_data)
+        if sis_acad:
+            merged_sis.update(sis_acad)
+            
+        if merged_sis:
+            branch = (
+                merged_sis.get("branch")
+                or merged_sis.get("department")
+                or merged_sis.get("enrollment", {}).get("department")
+                or merged_sis.get("enrollment", {}).get("branch")
+                or merged_sis.get("academic", {}).get("branch")
+                or merged_sis.get("academic", {}).get("department")
+                or merged_sis.get("branch_name")
+                or merged_sis.get("department_name")
+                or "UNKNOWN"
+            )
+            
+            batch_str = (
+                merged_sis.get("batch")
+                or merged_sis.get("enrollment", {}).get("batch")
+                or merged_sis.get("academic", {}).get("batch")
+                or "0"
+            )
             try:
                 batch = int(batch_str) if batch_str else 0
             except ValueError:
                 batch = 0
-            gender = sis_data.get("gender", "UNKNOWN")
+                
+            gender = (
+                merged_sis.get("gender")
+                or "UNKNOWN"
+            )
+            
             student_data = {
                 "student_id": data.student_id,
                 "cgpa": cgpa,
@@ -188,7 +252,10 @@ async def check_eligibility(data: EligibilityCheckRequest, db: Session = Depends
     # Check Branch
     if eligibility.allowed_branches:
         allowed = [b.strip().upper() for b in eligibility.allowed_branches.split(",")]
-        if student_data["branch"].upper() not in allowed:
+        allowed_normalized = [normalize_branch(b) for b in allowed]
+        student_branch_normalized = normalize_branch(student_data["branch"])
+        
+        if student_branch_normalized not in allowed_normalized:
             mismatches.append(f"Branch: You are {student_data['branch']}, allowed are {eligibility.allowed_branches}")
     # Check Batch
     if eligibility.min_batch and student_data["batch"] < eligibility.min_batch:

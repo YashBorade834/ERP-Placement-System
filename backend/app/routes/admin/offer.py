@@ -257,6 +257,96 @@ def get_all_offers(db: Session = Depends(get_db)):
     return db.query(Offer).all()
 
 
+# OFFER REPORT  –  full flat list for Admin / TPO dashboard
+from app.models.student_academic import StudentAcademic
+
+@router.get("/report", response_model=list[dict])
+async def get_offer_report(db: Session = Depends(get_db)):
+    """
+    Returns a flat list of all offers enriched with student, drive and company
+    details — used by the Admin / TPO Offer Report dashboard.
+    """
+    rows = (
+        db.query(
+            Offer.id.label("offer_id"),
+            Offer.status,
+            Offer.reason,
+            Offer.package.label("offer_package"),
+            Offer.position,
+            Offer.offer_date,
+            Offer.created_at.label("offer_created_at"),
+            StudentApplication.student_id,
+            StudentApplication.drive_id,
+            PlacementDrive.title.label("drive_title"),
+            PlacementDrive.drive_date,
+            Company.name.label("company_name"),
+            Company.industry,
+            StudentAcademic.cgpa,
+        )
+        .join(StudentApplication, Offer.application_id == StudentApplication.id)
+        .join(PlacementDrive, StudentApplication.drive_id == PlacementDrive.id)
+        .join(Company, PlacementDrive.company_id == Company.id)
+        .outerjoin(StudentAcademic, StudentAcademic.student_id == StudentApplication.student_id)
+        .order_by(Offer.offer_date.desc())
+        .all()
+    )
+
+    from app.services.sis_client import SISClient
+    from app.routes.student.application import normalize_branch
+
+    # Cache SIS calls so we don't hit the API multiple times for the same student
+    sis_cache: dict = {}
+
+    result = []
+    for row in rows:
+        sid = row.student_id
+
+        if sid not in sis_cache:
+            try:
+                sis_data = await SISClient().get_student_details(sid)
+                sis_cache[sid] = sis_data or {}
+            except Exception:
+                sis_cache[sid] = {}
+
+        sis = sis_cache[sid]
+
+        # Student name
+        student_name = (
+            f"{sis.get('first_name', '')} {sis.get('last_name', '')}".strip()
+            or f"Student {sid}"
+        )
+
+        # Branch — try SIS first, then fall back to label UNKNOWN
+        raw_branch = (
+            sis.get("branch")
+            or sis.get("department")
+            or sis.get("enrollment", {}).get("department")
+            or sis.get("enrollment", {}).get("branch")
+            or "UNKNOWN"
+        )
+        branch = normalize_branch(raw_branch)
+
+        result.append({
+            "offer_id":     row.offer_id,
+            "student_id":   sid,
+            "student_name": student_name,
+            "branch":       branch,
+            "company_name": row.company_name,
+            "industry":     row.industry,
+            "drive_id":     row.drive_id,
+            "drive_title":  row.drive_title,
+            "drive_date":   row.drive_date.isoformat() if row.drive_date else None,
+            "position":     row.position,
+            "package":      row.offer_package,
+            "offer_date":   row.offer_date.isoformat() if row.offer_date else None,
+            "status":       row.status,
+            "reason":       row.reason or "",
+            "cgpa":         row.cgpa,
+        })
+
+    return result
+
+
 # GET BY ID
 @router.get("/{id}", response_model=OfferResponse)
 def get_offer(id: int, db: Session = Depends(get_db)):
@@ -307,3 +397,5 @@ def delete_offer(id: int, db: Session = Depends(get_db)):
     db.delete(obj)
     db.commit()
     return {"message": "Deleted successfully"}
+
+

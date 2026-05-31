@@ -2,6 +2,10 @@ import axios from "./axios";
 
 // ✅ ADMIN ENDPOINTS
 
+// Get full offer report (for Admin/TPO dashboard)
+export const getOfferReport = () =>
+  axios.get("/admin/offer/report");
+
 // Get drives with selected students
 export const getDrivesWithSelectedStudents = () => 
   axios.get("/admin/offer/drives/with-selected-students");

@@ -251,6 +251,7 @@ import Drives from "./pages/admin/Drives";
 import Applications from "./pages/admin/Applications";
 import ManageApplications from "./pages/admin/ManageApplications";
 import Offers from "./pages/admin/Offers";
+import OfferReport from "./pages/admin/OfferReport";
 
 // 🔷 STUDENT PAGES
 import StudentDashboard from "./pages/student/Dashboard";
@@ -324,7 +325,10 @@ export default function App() {
         if (!tokenFromUrl && userIdFromUrl && roleFromUrl) {
           console.log("Using user_id/role from URL");
 
-          const role = roleFromUrl.toLowerCase();
+          let role = roleFromUrl.toLowerCase();
+          if (role === "placement_officer") {
+            role = "tpo";
+          }
 
           // ❌ OLD BUGGY CODE:
           // setUser({
@@ -421,7 +425,10 @@ export default function App() {
           }
         }
 
-        const role = userData.role?.toLowerCase() || "student";
+        let role = userData.role?.toLowerCase() || "student";
+        if (role === "placement_officer") {
+          role = "tpo";
+        }
 
         const finalUser = {
           ...userData,
@@ -480,7 +487,7 @@ export default function App() {
       <main className="erp-main">
         <Routes>
 
-          {user.role === "admin" && (
+          {(user.role === "admin" || user.role === "tpo") && (
             <>
               <Route path="/" element={<Dashboard />} />
               <Route path="/admin/dashboard" element={<Dashboard />} />
@@ -489,6 +496,7 @@ export default function App() {
               <Route path="/admin/applications" element={<Applications />} />
               <Route path="/admin/drives/:driveId/applications" element={<ManageApplications />} />
               <Route path="/admin/offers" element={<Offers />} />
+              <Route path="/admin/offer-report" element={<OfferReport />} />
             </>
           )}
 
